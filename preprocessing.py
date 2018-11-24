@@ -79,8 +79,8 @@ def debug_resynth(f0_,sp_,ap_,fs):
 def preprocess_save(normalisation=True,alpha=0.42,max_length=2800, fs=16000, val_split=0.2):
 
     # Conversion to np.array is due to indexing needed later
-    files = np.array(glob.glob("mocha-timit/dataset/fsew0_*.ema"))
-    files2 = np.array(glob.glob("mocha-timit/dataset/msak0_*.ema"))
+    files = np.array(glob.glob("dataset/fsew0_*.ema"))
+    files2 = np.array(glob.glob("dataset/msak0_*.ema"))
     files = np.concatenate((files,files2))
 
     total_samples = len(files)
@@ -127,14 +127,13 @@ def preprocess_save(normalisation=True,alpha=0.42,max_length=2800, fs=16000, val
         # Read wav
         wav_path = fname[:-3 or None] + "wav"
         sound_data, fs = sf.read(wav_path)
-        #wavfile.write("gt/msak_" + str_id + ".wav",fs,sound_data) 
 
         # Read in either to max lenth (truncation) or when data is available (zero padding)
         read_in_length = np.minimum(sound_data.shape[0],max_audio_length)
         wav_file = np.zeros((max_audio_length))
         wav_file[0:read_in_length] = sound_data[0:read_in_length]
         wav_file = wav_file + np.random.normal(0,0.003,wav_file.shape)
-        wavdata[k,:read_in_length] = decimate(sound_data[0:read_in_length],32)
+        wavdata[k,:read_in_length] = wav_file[0:read_in_length]
 
 
         lar_path = fname[:-3 or None] + "lar"

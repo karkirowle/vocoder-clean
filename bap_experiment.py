@@ -29,13 +29,11 @@ class LossHistory(Callback):
     def __init__(self,run,learning_curve):
         self.run = run
         self.i = 0
-        self.learning_curve = learning_curve
         
     def on_epoch_end(self,batch,logs):
         self.run.log_scalar("training.loss", logs.get('loss'), self.i)
         self.run.log_scalar("validation.loss", logs.get('val_loss'), self.i)
         self.i = self.i + 1
-        self.learning_curve[self.i] = logs.get('val_loss')
         
 
 date_at_start = datetime.datetime.now()
@@ -68,9 +66,6 @@ def my_main(_config,_run):
 
     options = _config
 
-    # Learning curve storage
-    learning_curve = np.zeros((100))
-    
     #preprocessing.preprocess_save()
     # Some hard-coded parameters
 
@@ -88,7 +83,7 @@ def my_main(_config,_run):
     model = model_gru.GRU_Model(options)    
     adam_optimiser = optimizers.Adam(lr=options["lr"])
     model.trainer.compile(optimizer=adam_optimiser, loss="mse")
-    model.trainer.fit(ema_train, sp_train, validation_data=(ema_test,sp_test),
+    model.trainer.fit(ema_train, ap_train, validation_data=(ema_test,ap_test),
                       epochs=options["epochs"],
                       batch_size=10,
                       callbacks=[LossHistory(_run,learning_curve),
@@ -97,17 +92,12 @@ def my_main(_config,_run):
     
     model.trainer.save("checkpoints/model_sp_new.hdf5")
 
-    filename = "analysis/retraining/" + str(options["percentage"]) + "_test"
-    np.savetxt(filename, learning_curve, delimiter=',')
-
-    sp_test_hat = model.trainer.predict(ema_test)
+    ap_test_hat = model.trainer.predict(ema_test)
 
     for k in range(len(scaler_sp)):
-        sp_test_hat[:,:,k] = scaler_sp[k].inverse_transform(sp_test_hat[:,:,k])
-        sp_test[:,:,k] = scaler_sp[k].inverse_transform(sp_test[:,:,k])
+        ap_test_hat[:,:,k] = scaler_ap[k].inverse_transform(sp_test_hat[:,:,k])
+        ap_test[:,:,k] = scaler_ap[k].inverse_transform(sp_test[:,:,k])
 
-    MCD_all = np.sum(np.sqrt(np.sum( (sp_test_hat - sp_test)**2,axis=2)),axis=1)
-    MCD_all = (10 * np.sqrt(2))/(sp_test.shape[1] * np.log(10)) * MCD_all
-    MCD_all = np.mean(MCD_all)
-    return_string =  "MCD (dB) (for all segments)" +  str(MCD_all)
+    BAP_all = np.sqrt(np.mean((np.float32(ap_test_hat) - np.float32(ap_test))**2))
+    return_string =  "BAP (dB) (for all segments)" +  str(MCD_all)
     return return_string

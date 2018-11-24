@@ -1,3 +1,10 @@
 dataset/
+dataset2/
+checkpoints/
+.logs/
 __pycache__/
 models/__pycache__/
+*~
+*.sh
+*.pkl
+*.npy
