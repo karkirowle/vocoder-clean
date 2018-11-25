@@ -34,8 +34,8 @@ class LossHistory(Callback):
     def on_epoch_end(self,batch,logs):
         self.run.log_scalar("training.loss", logs.get('loss'), self.i)
         self.run.log_scalar("validation.loss", logs.get('val_loss'), self.i)
-        self.i = self.i + 1
         self.learning_curve[self.i] = logs.get('val_loss')
+        self.i = self.i + 1
         
 
 date_at_start = datetime.datetime.now()
@@ -84,7 +84,9 @@ def my_main(_config,_run):
     print(wavdata.shape)
     # Extract feature number for convenience
     tb = TensorBoard(log_dir=".logs/stuff" + str(options["noise"]))
-
+    es = EarlyStopping(monitor="val_loss", min_delta=0.01, patience=10,
+                       restore_best_weights=True)
+    
     model = model_gru.GRU_Model(options)    
     adam_optimiser = optimizers.Adam(lr=options["lr"])
     model.trainer.compile(optimizer=adam_optimiser, loss="mse")
@@ -92,13 +94,13 @@ def my_main(_config,_run):
                       epochs=options["epochs"],
                       batch_size=10,
                       callbacks=[LossHistory(_run,learning_curve),
-                                 #restore_best_weights=True),
+                                 es,
                                  tb])
     
     model.trainer.save("checkpoints/model_sp_new.hdf5")
 
-    filename = "analysis/retraining/" + str(options["percentage"]) + "_test"
-    np.savetxt(filename, learning_curve, delimiter=',')
+#    filename = "analysis/retraining/" + str(options["percentage"]) + "_test"
+#    np.savetxt(filename, learning_curve, delimiter=',')
 
     sp_test_hat = model.trainer.predict(ema_test)
 

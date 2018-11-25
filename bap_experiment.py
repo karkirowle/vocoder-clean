@@ -26,7 +26,7 @@ np.random.seed(2)
 
 class LossHistory(Callback):
 
-    def __init__(self,run,learning_curve):
+    def __init__(self,run):
         self.run = run
         self.i = 0
         
@@ -50,7 +50,7 @@ options = {
     "num_features": 21,
     "lr": 0.003,
     "epochs": 100,
-    "out_features": 41,
+    "out_features": 1,
     "gru": 128,
     "seed": 10,
     "noise": 0,
@@ -79,6 +79,8 @@ def my_main(_config,_run):
     print(wavdata.shape)
     # Extract feature number for convenience
     tb = TensorBoard(log_dir=".logs/stuff" + str(options["noise"]))
+    es = EarlyStopping(monitor="val_loss", min_delta=0.01, patience=10,
+                       restore_best_weights=True)
 
     model = model_gru.GRU_Model(options)    
     adam_optimiser = optimizers.Adam(lr=options["lr"])
@@ -86,18 +88,18 @@ def my_main(_config,_run):
     model.trainer.fit(ema_train, ap_train, validation_data=(ema_test,ap_test),
                       epochs=options["epochs"],
                       batch_size=10,
-                      callbacks=[LossHistory(_run,learning_curve),
-                                 #restore_best_weights=True),
-                                 tb])
+                      callbacks=[LossHistory(_run),
+                                 es,
+                                 tb],)
     
-    model.trainer.save("checkpoints/model_sp_new.hdf5")
+    model.trainer.save("checkpoints/model_bap_new.hdf5")
 
     ap_test_hat = model.trainer.predict(ema_test)
 
-    for k in range(len(scaler_sp)):
-        ap_test_hat[:,:,k] = scaler_ap[k].inverse_transform(sp_test_hat[:,:,k])
-        ap_test[:,:,k] = scaler_ap[k].inverse_transform(sp_test[:,:,k])
+    for k in range(len(scaler_ap)):
+        ap_test_hat[:,:,k] = scaler_ap[k].inverse_transform(ap_test_hat[:,:,k])
+        ap_test[:,:,k] = scaler_ap[k].inverse_transform(ap_test[:,:,k])
 
     BAP_all = np.sqrt(np.mean((np.float32(ap_test_hat) - np.float32(ap_test))**2))
-    return_string =  "BAP (dB) (for all segments)" +  str(MCD_all)
+    return_string =  "BAP (dB) (for all segments)" +  str(BAP_all)
     return return_string

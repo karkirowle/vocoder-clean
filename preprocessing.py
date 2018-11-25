@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 
 import soundfile as sf
-import sounddevice as s
+import sounddevice as sd
 
 import time
 
@@ -22,6 +22,7 @@ from nnmnkwii.preprocessing import interp1d
 import tqdm as tqdm
 
 from scipy.io import wavfile
+
 import glob
 
         
@@ -68,7 +69,7 @@ def debug_synth(f0,sp,ap,fs):
     sd.play(sound,fs)
     time.sleep(5)
 
-def debug_resynth(f0_,sp_,ap_,fs):
+def debug_resynth(f0_,sp_,ap_,fs,alpha=0.42):
     sp_ = sptk.conversion.mc2sp(sp_, alpha, 1024)
     ap_ = pw.decode_aperiodicity(ap_, fs, 1024)
     sound = pw.synthesize(f0_,sp_,ap_,fs,2)
@@ -222,6 +223,47 @@ def preprocess_save(normalisation=True,alpha=0.42,max_length=2800, fs=16000, val
     joblib.dump(scaler_sp, 'scaler_sp_.pkl')
     joblib.dump(scaler_ap, 'scaler_ap_.pkl')
 
+def load_test(delay,percentage=1):
+    """Loads the data from the preprocessed numpy arrays
+
+    Keyword arguments:
+    - delay - the amount of delay in samples to apply to the output data. The samples at the
+beginning are padded with zeroes.
+    - percentage - percentage of the dedicated training data to actually use for training. This is useful to change in order to see if model performance is data-limited
+
+    """
+    
+    dataset = np.load("dataset_.npy")
+    f0set = np.load("f0set_.npy")
+    spset = np.load("spset_.npy")
+    apset = np.load("apset_.npy")
+    givenf0set = np.load("givenf0set_.npy")
+    scaler_f0 = joblib.load('scaler_f0_.pkl')
+    scaler_sp = joblib.load('scaler_sp_.pkl')
+    scaler_ap = joblib.load('scaler_ap_.pkl')
+    train_idx = np.load("train_idx_.npy")
+    test_idx = np.load("val_idx_.npy")
+
+    # Reduce training id size. It is shuffled by default so it is not reshuffled for brevity
+    keep_amount = int(np.ceil(percentage * len(train_idx)))
+    train_idx = train_idx[:keep_amount]
+    
+    ema_test = dataset[test_idx,:,:]
+    # Padding f0
+    f0_test = np.pad(f0set[test_idx,:],((0,0),(delay,0)), mode="constant")[:,:-delay]
+
+    # Padding spectra
+    sp_test = np.pad(spset[test_idx,:,:],((0,0),(delay,0),(0,0)), mode="constant")[:,:-delay,:]
+
+    # Padding ap
+    ap_test = np.pad(apset[test_idx,:,:],((0,0),(delay,0),(0,0)), mode="constant")[:,:-delay]
+
+    # Unprocssed f0
+    givenf0_test = np.pad(givenf0set[test_idx,:],((0,0),(delay,0)), mode="constant")[:,:-delay]
+    
+
+    return ema_test, sp_test, ap_test,givenf0_test, scaler_f0, scaler_sp, \
+        scaler_ap
 def load_data(delay,percentage=1):
     """Loads the data from the preprocessed numpy arrays
 

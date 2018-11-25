@@ -8,3 +8,5 @@ models/__pycache__/
 *.sh
 *.pkl
 *.npy
+*#
+*#*
