@@ -12,10 +12,10 @@ import time
 import pyworld as pw
 
 from keras.models import load_model
-from models import model_gru
+from models import model_gru, model_bigru, model_blstm
 from keras.callbacks import Callback, EarlyStopping, TensorBoard
 from keras import optimizers
-import preprocessing 
+import preprocessing3
 from scipy.io import wavfile
 import pysptk as sptk
 from sacred import Experiment
@@ -48,9 +48,9 @@ ex = Experiment("run_" + date_string)
 # General NN training options, specificities modified inside scope
 options = {
     "experiment" : "reproduction_save_attempt",
-    "max_input_length" : 2800,
-    "num_features": 21,
-    "lr": 0.003,
+    "max_input_length" : 1000,
+    "num_features": 12,
+    "lr": 0.01, # 0.003
     "epochs": 100,
     "out_features": 41,
     "gru": 128,
@@ -71,23 +71,27 @@ def my_main(_config,_run):
     # Learning curve storage
     learning_curve = np.zeros((100))
     
-    #preprocessing.preprocess_save()
     # Some hard-coded parameters
 
     ema_train, ema_test,f0_train, \
     f0_test, sp_train, sp_test, \
     ap_train, ap_test, givenf0_train, \
     givenf0_test, wavdata, \
-    scaler_f0, scaler_sp, scaler_ap = preprocessing.load_data(options["delay"],
-                                                                           options["percentage"])
+    scaler_f0, scaler_sp, scaler_ap = preprocessing3.load_data(options["delay"],
+                                                               options["percentage"])
 
+    idx = [0,1,2,3,4,5,6,7,10,11,12,13]
+    ema_train = ema_train[:,:,idx]
+    ema_test = ema_test[:,:,idx]
+    
     print(wavdata.shape)
+    print(sp_train.shape)
     # Extract feature number for convenience
     tb = TensorBoard(log_dir=".logs/stuff" + str(options["noise"]))
-    es = EarlyStopping(monitor="val_loss", min_delta=0.01, patience=10,
+    es = EarlyStopping(monitor="val_loss", min_delta=0.01, patience=100,
                        restore_best_weights=True)
     
-    model = model_gru.GRU_Model(options)    
+    model = model_blstm.LSTM_Model(options)    
     adam_optimiser = optimizers.Adam(lr=options["lr"])
     model.trainer.compile(optimizer=adam_optimiser, loss="mse")
     model.trainer.fit(ema_train, sp_train, validation_data=(ema_test,sp_test),
@@ -100,7 +104,7 @@ def my_main(_config,_run):
     model.trainer.save("checkpoints/model_sp_new.hdf5")
 
 #    filename = "analysis/retraining/" + str(options["percentage"]) + "_test"
-#    np.savetxt(filename, learning_curve, delimiter=',')
+#    np.savetxt(filename, learning_curve, delimiter=','
 
     sp_test_hat = model.trainer.predict(ema_test)
 
