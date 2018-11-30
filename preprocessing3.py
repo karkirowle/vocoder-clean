@@ -157,25 +157,25 @@ def data_combine():
     scale = np.std((points2 - points2_mean),axis=0)/np.std((points1 - points1_mean),axis=0)
     return scale,points1_mean,points2_mean
     
-def debug_synth(f0,sp,ap,fs):
-    sound = pw.synthesize(f0,sp,ap,fs,2)
+def debug_synth(f0,sp,ap,fs,an=2):
+    sound = pw.synthesize(f0,sp,ap,fs,an)
     sd.play(sound,fs)
-    time.sleep(5)
+    sd.wait()
 
-def debug_resynth(f0_,sp_,ap_,fs,alpha=0.42):
-    sp_ = sptk.conversion.mc2sp(sp_, alpha, 1024)
-    ap_ = pw.decode_aperiodicity(ap_, fs, 1024)
-    sound = pw.synthesize(f0_,sp_,ap_,fs,2)
-    sd.play(2*sound,fs)
-    time.sleep(5)
+def debug_resynth(f0_,sp_,ap_,fs,an=2,alpha=0.42,fftbin=1024):
+    sp_ = sptk.conversion.mc2sp(sp_, alpha, fftbin)
+    ap_ = pw.decode_aperiodicity(ap_, fs, fftbin)
+    sound = pw.synthesize(f0_,sp_,ap_,fs,an)
+    sd.play(sound,fs)
+    sd.wait()
     
 def preprocess_save_combined(normalisation=True,alpha=0.42,
                              max_length=1000, fs=16000, val_split=0.2,
                     noise=False):
 
-    files1 = np.array(glob.glob("dataset2/*.ema"))
-    files2 = np.array(glob.glob("dataset/*.ema"))
-    files = np.concatenate((files1,files2))
+    files = np.array(glob.glob("dataset2/*.ema"))
+    #files2 = np.array(glob.glob("dataset/*.ema"))
+    #files = np.concatenate((files1,files2))
     
     np.random.shuffle(files)
 
@@ -198,7 +198,8 @@ def preprocess_save_combined(normalisation=True,alpha=0.42,
     all_channel = 14
     max_f0_length = max_length
     factor = 80
-    max_audio_length = max_length * factor
+    # Audio is down sampled appropriately by the analysis window
+    max_audio_length = max_length
     bins_1 = 41
     bins_2 = 1
     
@@ -238,27 +239,35 @@ def preprocess_save_combined(normalisation=True,alpha=0.42,
         # Read wav
         wav_path = fname[:-3 or None] + "wav"
         sound_data, fs = sf.read(wav_path)
+
+        # DEBUG: SD play check
+        #sd.play(sound_data,fs)
+        #sd.wait()
         # Read in either to max lenth (truncation) or when data is available (zero padding)
-        read_in_length = np.minimum(sound_data.shape[0],max_audio_length)
-        wav_file = np.zeros((max_audio_length))
-        wav_file[0:read_in_length] = sound_data[0:read_in_length]
-        if noise:
-            wav_file = wav_file + np.random.normal(0,0.003,wav_file.shape)
-        wavdata[k,:read_in_length] = wav_file[0:read_in_length]
-        
-        f0, sp, ap = pw.wav2world(wav_file, fs, 2) # 2
+
+        read_in_length = np.minimum(sound_data.shape[0],80*max_audio_length)
+        #wav_file = np.zeros((max_audio_length))
+        #wav_file[0:read_in_length] = sound_data[0:read_in_length]
+        #if noise:
+        #    wav_file = wav_file + np.random.normal(0,0.003,wav_file.shape)
+        #wavdata[k,:read_in_length] = wav_file[0:read_in_length]
+
+        f0, sp, ap = pw.wav2world(sound_data, fs, 5) # 2
 
         # DEBUG: resynth
-        #debug_synth(f0,sp,ap,fs)
-        
+        #debug_synth(f0,sp,ap,fs,5)
+
+        #print(sp.shape)
+        #print(data_.shape)
         # Because of the 0th order spectra is needed, we use -1 for bin size
+
         sp = sptk.conversion.sp2mc(sp, bins_1 - 1, alpha)
 
         # Encode the spectral envelopes
         ap = pw.code_aperiodicity(ap, fs)
 
         # DEBUG: Decode spectral envelope
-        #debug_resynth(f0,sp,ap,fs)
+        #debug_resynth(f0,sp,ap,fs,5)
         
         # Linear interpolation improved
         puref0 = f0
@@ -271,11 +280,13 @@ def preprocess_save_combined(normalisation=True,alpha=0.42,
         read_in_length = np.minimum(sp.shape[0],max_f0_length)
         spset[k,0:read_in_length,:] = sp[0:read_in_length,:]
 
+
         # Band aperiodicites
         read_in_length = np.minimum(ap.shape[0],max_f0_length)
         apset[k,0:read_in_length,:] = ap[0:read_in_length,:]
 
-        #debug_resynth(givenf0set[k,:],spset[k,:,:],apset[k,:,:],fs)
+        # A buzz is introduced here :(
+        #debug_resynth(puref0set[k,:read_in_length],spset[k,:read_in_length,:],apset[k,:read_in_length,:],fs,5)
 
     if normalisation:
 
@@ -299,16 +310,16 @@ def preprocess_save_combined(normalisation=True,alpha=0.42,
             apset[train_idx,:,k] = scaler_ap[k].fit_transform(apset[train_idx,:,k])
             apset[val_idx,:,k] = scaler_ap[k].fit_transform(apset[val_idx,:,k])
 
-    np.save("dataset_", dataset)
-    np.save("puref0set_", puref0set)
-    np.save("spset_", spset)
-    np.save("apset_", apset)
-    np.save("train_idx_", train_idx)
-    np.save("val_idx_", val_idx)
-    np.save("wavdata", wavdata)
+    np.save("processed/dataset_", dataset)
+    np.save("processed/puref0set_", puref0set)
+    np.save("processed/spset_", spset)
+    np.save("processed/apset_", apset)
+    np.save("processed/train_idx_", train_idx)
+    np.save("processed/val_idx_", val_idx)
+    np.save("processed/wavdata", wavdata)
 
-    joblib.dump(scaler_sp, 'scaler_sp_.pkl')
-    joblib.dump(scaler_ap, 'scaler_ap_.pkl')
+    joblib.dump(scaler_sp, 'processed/scaler_sp_.pkl')
+    joblib.dump(scaler_ap, 'processedscaler_ap_.pkl')
 
 def load_test(delay,percentage=1):
     """Loads the data from the preprocessed numpy arrays
@@ -320,16 +331,16 @@ beginning are padded with zeroes.
 
     """
     
-    dataset = np.load("dataset_.npy")
-    f0set = np.load("f0set_.npy")
-    spset = np.load("spset_.npy")
-    apset = np.load("apset_.npy")
-    puref0set = np.load("puref0set_.npy")
-    scaler_f0 = joblib.load('scaler_f0_.pkl')
-    scaler_sp = joblib.load('scaler_sp_.pkl')
-    scaler_ap = joblib.load('scaler_ap_.pkl')
-    train_idx = np.load("train_idx_.npy")
-    test_idx = np.load("val_idx_.npy")
+    dataset = np.load("processed/dataset_.npy")
+    f0set = np.load("processed/f0set_.npy")
+    spset = np.load("processed/spset_.npy")
+    apset = np.load("processed/apset_.npy")
+    puref0set = np.load("processed/puref0set_.npy")
+    scaler_f0 = joblib.load('processed/scaler_f0_.pkl')
+    scaler_sp = joblib.load('processed/scaler_sp_.pkl')
+    scaler_ap = joblib.load('processed/scaler_ap_.pkl')
+    train_idx = np.load("processed/train_idx_.npy")
+    test_idx = np.load("processed/val_idx_.npy")
 
     # Reduce training id size. It is shuffled by default so it is not reshuffled for brevity
     keep_amount = int(np.ceil(percentage * len(train_idx)))
@@ -357,18 +368,13 @@ beginning are padded with zeroes.
 
     """
     
-    dataset = np.load("dataset_.npy")
-    vset = np.load("vset_.npy")
-    f0set = np.load("f0set_.npy")
-    spset = np.load("spset_.npy")
-    apset = np.load("apset_.npy")
-    givenf0set = np.load("givenf0set_.npy")
-    scaler_f0 = joblib.load('scaler_f0_.pkl')
-    scaler_sp = joblib.load('scaler_sp_.pkl')
-    scaler_ap = joblib.load('scaler_ap_.pkl')
-    train_idx = np.load("train_idx_.npy")
-    wavdata = np.load("wavdata.npy")
-    test_idx = np.load("val_idx_.npy")
+    dataset = np.load("processed/dataset_.npy")
+    spset = np.load("processed/spset_.npy")
+    apset = np.load("processed/apset_.npy")
+    scaler_sp = joblib.load('processed/scaler_sp_.pkl')
+    train_idx = np.load("processed/train_idx_.npy")
+    wavdata = np.load("processed/wavdata.npy")
+    test_idx = np.load("processed/val_idx_.npy")
 
     # Reduce training id size. It is shuffled by default so it is not reshuffled for brevity
     keep_amount = int(np.ceil(percentage * len(train_idx)))
@@ -396,13 +402,13 @@ beginning are padded with zeroes.
     givenf0_test = None
     givenf0set = None
     return ema_train, ema_test, \
-        f0_train, f0_test, \
+        None, None, \
         sp_train, sp_test, \
-        ap_train, ap_test, \
-        givenf0_train, givenf0_test, \
-        wavdata, scaler_f0, scaler_sp, scaler_ap
+        None, None, \
+        None, None, \
+        wavdata, None, scaler_sp, None
 
 #preprocess_save_combined(normalisation=True,alpha=0.42,max_length=1000,
-#                fs=16000, val_split=0.2,
-#                    noise=False)
+#                fs=16000, val_split=0.1,
+#                         noise=False)
 

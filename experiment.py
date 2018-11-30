@@ -51,7 +51,7 @@ options = {
     "max_input_length" : 1000,
     "num_features": 12,
     "lr": 0.01, # 0.003
-    "epochs": 100,
+    "epochs": 60,
     "out_features": 41,
     "gru": 128,
     "seed": 10,
@@ -69,7 +69,7 @@ def my_main(_config,_run):
     options = _config
 
     # Learning curve storage
-    learning_curve = np.zeros((100))
+    learning_curve = np.zeros((options["epochs"]))
     
     # Some hard-coded parameters
 
@@ -87,18 +87,19 @@ def my_main(_config,_run):
     print(wavdata.shape)
     print(sp_train.shape)
     # Extract feature number for convenience
-    tb = TensorBoard(log_dir=".logs/stuff" + str(options["noise"]))
+    tb = TensorBoard(log_dir="logs/" + date_string + "_" + str(options["noise"]))
     es = EarlyStopping(monitor="val_loss", min_delta=0.01, patience=100,
                        restore_best_weights=True)
     
     model = model_blstm.LSTM_Model(options)    
     adam_optimiser = optimizers.Adam(lr=options["lr"])
+    sgd_optimiser = optimizers.SGD(lr=options["lr"])
     model.trainer.compile(optimizer=adam_optimiser, loss="mse")
     model.trainer.fit(ema_train, sp_train, validation_data=(ema_test,sp_test),
                       epochs=options["epochs"],
                       batch_size=10,
                       callbacks=[LossHistory(_run,learning_curve),
-                                 es,
+                                 #es,
                                  tb])
     
     model.trainer.save("checkpoints/model_sp_new.hdf5")

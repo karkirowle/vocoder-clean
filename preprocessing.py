@@ -54,6 +54,7 @@ def ema_read(fname):
             channel_number = int(line.split()[0].split('_')[1])
             channel_name = line.split()[1]
             columns[channel_number + 2] = channel_name
+            
             line = clean(f.readline())
         string = f.read()
         data = np.fromstring(string, dtype='float32')
@@ -73,7 +74,7 @@ def debug_resynth(f0_,sp_,ap_,fs,alpha=0.42):
     sp_ = sptk.conversion.mc2sp(sp_, alpha, 1024)
     ap_ = pw.decode_aperiodicity(ap_, fs, 1024)
     sound = pw.synthesize(f0_,sp_,ap_,fs,2)
-    sd.play(sound,fs)
+    sd.play(2*sound,fs)
     time.sleep(5)
     
 
@@ -148,7 +149,7 @@ def preprocess_save(normalisation=True,alpha=0.42,max_length=2800, fs=16000, val
         f0, sp, ap = pw.wav2world(wav_file, fs, 2) # 2
 
         # DEBUG: resynth
-        #debug_synth(f0,sp,ap)
+        #debug_synth(f0,sp,ap,fs)
         
         # Because of the 0th order spectra is needed, we use -1 for bin size
         sp = sptk.conversion.sp2mc(sp, bins_1 - 1, alpha)
@@ -157,7 +158,7 @@ def preprocess_save(normalisation=True,alpha=0.42,max_length=2800, fs=16000, val
         ap = pw.code_aperiodicity(ap, fs)
 
         # DEBUG: Decode spectral envelope
-        #debug_resynth(f0,sp,ap)
+        # debug_resynth(f0,sp,ap,fs)
         
         # Linear interpolation improved
         puref0 = f0
@@ -182,6 +183,8 @@ def preprocess_save(normalisation=True,alpha=0.42,max_length=2800, fs=16000, val
         f0, _, _ = pw.wav2world(lar_data, fs, 2)
         read_in_length = np.minimum(spset.shape[1],max_f0_length)
         givenf0set[k,0:read_in_length] = f0[0:read_in_length]
+
+        debug_resynth(givenf0set[k,:],spset[k,:,:],apset[k,:,:],fs)
 
     if normalisation:
         scaler_f0 = preprocessing.StandardScaler()
@@ -237,7 +240,7 @@ beginning are padded with zeroes.
     f0set = np.load("f0set_.npy")
     spset = np.load("spset_.npy")
     apset = np.load("apset_.npy")
-    givenf0set = np.load("givenf0set_.npy")
+    puref0set = np.load("puref0set_.npy")
     scaler_f0 = joblib.load('scaler_f0_.pkl')
     scaler_sp = joblib.load('scaler_sp_.pkl')
     scaler_ap = joblib.load('scaler_ap_.pkl')
@@ -250,7 +253,7 @@ beginning are padded with zeroes.
     
     ema_test = dataset[test_idx,:,:]
     # Padding f0
-    f0_test = np.pad(f0set[test_idx,:],((0,0),(delay,0)), mode="constant")[:,:-delay]
+    puref0_test = np.pad(puref0set[test_idx,:],((0,0),(delay,0)), mode="constant")[:,:-delay]
 
     # Padding spectra
     sp_test = np.pad(spset[test_idx,:,:],((0,0),(delay,0),(0,0)), mode="constant")[:,:-delay,:]
@@ -258,11 +261,7 @@ beginning are padded with zeroes.
     # Padding ap
     ap_test = np.pad(apset[test_idx,:,:],((0,0),(delay,0),(0,0)), mode="constant")[:,:-delay]
 
-    # Unprocssed f0
-    givenf0_test = np.pad(givenf0set[test_idx,:],((0,0),(delay,0)), mode="constant")[:,:-delay]
-    
-
-    return ema_test, sp_test, ap_test,givenf0_test, scaler_f0, scaler_sp, \
+    return ema_test, sp_test, ap_test,puref0_test, scaler_f0, scaler_sp, \
         scaler_ap
 def load_data(delay,percentage=1):
     """Loads the data from the preprocessed numpy arrays
@@ -316,3 +315,5 @@ beginning are padded with zeroes.
         ap_train, ap_test, \
         givenf0_train, givenf0_test, \
         wavdata, scaler_f0, scaler_sp, scaler_ap
+
+
