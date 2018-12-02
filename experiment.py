@@ -13,7 +13,7 @@ import pyworld as pw
 
 from keras.models import load_model
 from models import model_gru, model_bigru, model_blstm
-from keras.callbacks import Callback, EarlyStopping, TensorBoard
+from keras.callbacks import Callback, EarlyStopping, TensorBoard, ModelCheckpoint
 from keras import optimizers
 import preprocessing3
 from scipy.io import wavfile
@@ -57,6 +57,7 @@ options = {
     "seed": 10,
     "noise": 0,
     "delay": 25,
+    "batch_size": 90,
     "percentage": 1
 }
 
@@ -88,21 +89,21 @@ def my_main(_config,_run):
     print(sp_train.shape)
     # Extract feature number for convenience
     tb = TensorBoard(log_dir="logs/" + date_string + "_" + str(options["noise"]))
-    es = EarlyStopping(monitor="val_loss", min_delta=0.01, patience=100,
-                       restore_best_weights=True)
-    
+    #es = EarlyStopping(monitor="val_loss", min_delta=0.01, patience=100,
+    #                   restore_best_weights=True)
+    mc = ModelCheckpoint("checkpoints/model_sp_comb.hdf5" , save_best_only=True)
     model = model_blstm.LSTM_Model(options)    
     adam_optimiser = optimizers.Adam(lr=options["lr"])
     sgd_optimiser = optimizers.SGD(lr=options["lr"])
     model.trainer.compile(optimizer=adam_optimiser, loss="mse")
     model.trainer.fit(ema_train, sp_train, validation_data=(ema_test,sp_test),
                       epochs=options["epochs"],
-                      batch_size=10,
+                      batch_size=options["batch_size"],
                       callbacks=[LossHistory(_run,learning_curve),
-                                 #es,
+                                 mc,
                                  tb])
     
-    model.trainer.save("checkpoints/model_sp_new.hdf5")
+    #model.trainer.save("checkpoints/model_sp_comb.hdf5")
 
 #    filename = "analysis/retraining/" + str(options["percentage"]) + "_test"
 #    np.savetxt(filename, learning_curve, delimiter=','

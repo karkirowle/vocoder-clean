@@ -173,9 +173,9 @@ def preprocess_save_combined(normalisation=True,alpha=0.42,
                              max_length=1000, fs=16000, val_split=0.2,
                     noise=False):
 
-    files = np.array(glob.glob("dataset2/*.ema"))
-    #files2 = np.array(glob.glob("dataset/*.ema"))
-    #files = np.concatenate((files1,files2))
+    files1 = np.array(glob.glob("dataset2/*.ema"))
+    files2 = np.array(glob.glob("dataset/*.ema"))
+    files = np.concatenate((files1,files2))
     
     np.random.shuffle(files)
 
@@ -310,16 +310,16 @@ def preprocess_save_combined(normalisation=True,alpha=0.42,
             apset[train_idx,:,k] = scaler_ap[k].fit_transform(apset[train_idx,:,k])
             apset[val_idx,:,k] = scaler_ap[k].fit_transform(apset[val_idx,:,k])
 
-    np.save("processed/dataset_", dataset)
-    np.save("processed/puref0set_", puref0set)
-    np.save("processed/spset_", spset)
-    np.save("processed/apset_", apset)
-    np.save("processed/train_idx_", train_idx)
-    np.save("processed/val_idx_", val_idx)
-    np.save("processed/wavdata", wavdata)
+    np.save("processed_comb/dataset_", dataset)
+    np.save("processed_comb/puref0set_", puref0set)
+    np.save("processed_comb/spset_", spset)
+    np.save("processed_comb/apset_", apset)
+    np.save("processed_comb/train_idx_", train_idx)
+    np.save("processed_comb/val_idx_", val_idx)
+    np.save("processed_comb/wavdata", wavdata)
 
-    joblib.dump(scaler_sp, 'processed/scaler_sp_.pkl')
-    joblib.dump(scaler_ap, 'processedscaler_ap_.pkl')
+    joblib.dump(scaler_sp, 'processed_comb/scaler_sp_.pkl')
+    joblib.dump(scaler_ap, 'processed_comb/scaler_ap_.pkl')
 
 def load_test(delay,percentage=1):
     """Loads the data from the preprocessed numpy arrays
@@ -331,16 +331,16 @@ beginning are padded with zeroes.
 
     """
     
-    dataset = np.load("processed/dataset_.npy")
-    f0set = np.load("processed/f0set_.npy")
-    spset = np.load("processed/spset_.npy")
-    apset = np.load("processed/apset_.npy")
-    puref0set = np.load("processed/puref0set_.npy")
-    scaler_f0 = joblib.load('processed/scaler_f0_.pkl')
-    scaler_sp = joblib.load('processed/scaler_sp_.pkl')
-    scaler_ap = joblib.load('processed/scaler_ap_.pkl')
-    train_idx = np.load("processed/train_idx_.npy")
-    test_idx = np.load("processed/val_idx_.npy")
+    dataset = np.load("processed_comb/dataset_.npy")
+    #f0set = np.load("processed/f0set_.npy")
+    spset = np.load("processed_comb/spset_.npy")
+    apset = np.load("processed_comb/apset_.npy")
+    puref0set = np.load("processed_comb/puref0set_.npy")
+    #scaler_f0 = joblib.load('processed/scaler_f0_.pkl')
+    scaler_sp = joblib.load('processed_comb/scaler_sp_.pkl')
+    #scaler_ap = joblib.load('processed/scaler_ap_.pkl')
+    train_idx = np.load("processed_comb/train_idx_.npy")
+    test_idx = np.load("processed_comb/val_idx_.npy")
 
     # Reduce training id size. It is shuffled by default so it is not reshuffled for brevity
     keep_amount = int(np.ceil(percentage * len(train_idx)))
@@ -354,10 +354,10 @@ beginning are padded with zeroes.
     sp_test = np.pad(spset[test_idx,:,:],((0,0),(delay,0),(0,0)), mode="constant")[:,:-delay,:]
 
     # Padding ap
-    ap_test = np.pad(apset[test_idx,:,:],((0,0),(delay,0),(0,0)), mode="constant")[:,:-delay]
+    #ap_test = np.pad(apset[test_idx,:,:],((0,0),(delay,0),(0,0)), mode="constant")[:,:-delay]
 
-    return ema_test, sp_test, ap_test,puref0_test, scaler_f0, scaler_sp, \
-        scaler_ap
+    return ema_test, sp_test, None,puref0_test, None, scaler_sp, \
+        None
 def load_data(delay,percentage=1):
     """Loads the data from the preprocessed numpy arrays
 
@@ -368,13 +368,13 @@ beginning are padded with zeroes.
 
     """
     
-    dataset = np.load("processed/dataset_.npy")
-    spset = np.load("processed/spset_.npy")
-    apset = np.load("processed/apset_.npy")
-    scaler_sp = joblib.load('processed/scaler_sp_.pkl')
-    train_idx = np.load("processed/train_idx_.npy")
-    wavdata = np.load("processed/wavdata.npy")
-    test_idx = np.load("processed/val_idx_.npy")
+    dataset = np.load("processed_comb/dataset_.npy")
+    spset = np.load("processed_comb/spset_.npy")
+    apset = np.load("processed_comb/apset_.npy")
+    scaler_sp = joblib.load('processed_comb/scaler_sp_.pkl')
+    train_idx = np.load("processed_comb/train_idx_.npy")
+    wavdata = np.load("processed_comb/wavdata.npy")
+    test_idx = np.load("processed_comb/val_idx_.npy")
 
     # Reduce training id size. It is shuffled by default so it is not reshuffled for brevity
     keep_amount = int(np.ceil(percentage * len(train_idx)))
@@ -409,6 +409,6 @@ beginning are padded with zeroes.
         wavdata, None, scaler_sp, None
 
 #preprocess_save_combined(normalisation=True,alpha=0.42,max_length=1000,
-#                fs=16000, val_split=0.1,
+#                                         fs=16000, val_split=0.1,
 #                         noise=False)
 
