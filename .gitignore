@@ -1,6 +1,11 @@
+data_loader.py
+torch_experiment.py
 logs/
+sounds/
+sounds2/
 dataset/
 dataset2/
+images/
 checkpoints/
 .logs/
 __pycache__/
