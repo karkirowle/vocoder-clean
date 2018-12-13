@@ -59,7 +59,7 @@ options = {
     "out_features": 82,
     "gru": 128,
     "seed": 10,
-    "noise": 0,
+    "noise": 0.001,
     "delay": 1, # 25 
     "batch_size": 45, #90
     "percentage": 1
@@ -94,7 +94,7 @@ def my_main(_config,_run):
     tb = TensorBoard(log_dir="logs/" + date_string + "_" + str(options["noise"]))
     #es = EarlyStopping(monitor="val_loss", min_delta=0.01, patience=100,
     #                   restore_best_weights=True)
-    mc = ModelCheckpoint("checkpoints/model_sp_takuragi.hdf5" , save_best_only=True)
+    mc = ModelCheckpoint("checkpoints/model_sp_comb_noise2.hdf5" , save_best_only=True)
     model = model_blstm.LSTM_Model(options)    
     adam_optimiser = optimizers.Adam(lr=options["lr"])
     sgd_optimiser = optimizers.SGD(lr=options["lr"])

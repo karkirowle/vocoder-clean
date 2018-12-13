@@ -51,7 +51,7 @@ t = 6500
 path_test[:,:1000,4] = signal.resample(ema_test[:,:,4],t,axis=1)[:,:1000]
 path_test[:,:1000,9] = signal.resample(ema_test[:,:,9],t,axis=1)[:,:1000]
 
-mfcc_model = load_model("checkpoints/model_sp_c2.hdf5", custom_objects =
+mfcc_model = load_model("checkpoints/model_sp_comb_lstm_noise2.hdf5", custom_objects =
                         {'LayerNormalization': LayerNormalization} )
 #mfcc_model = load_model("checkpoints/presentation_model.hdf5", custom_objects =
 #                        {'LayerNormalization': LayerNormalization} )
@@ -109,28 +109,28 @@ for id in range(100):
     resynth_length = len(np.trim_zeros(f0[id,:],'b'))
     print(resynth_length)
 
-    fname = "sounds2/" + str(id)
+    fname = "sounds3/" + str(id)
     print(fname)
 
-    #preprocessing3.debug_resynth(f0[id,:resynth_length],
-    #                             mlpg_generated[id,:resynth_length],
-    #                             bap_gt_normalised[id,:resynth_length],
-    #                             fs, an=5)
-    #preprocessing3.debug_resynth(f0[id,:resynth_length],
-    #                             mlpg_p_generated[id,:resynth_length],
-    #                             bap_gt_normalised[id,:resynth_length],
-    #                             fs, an=5)
-    preprocessing3.save_resynth(fname + "_gt.wav",
-                                f0[id,:resynth_length],
-                                 mfcc_gt_normalised[id,:resynth_length],
-                                 bap_gt_normalised[id,:resynth_length],fs,an=5)
-    preprocessing3.save_resynth(fname + "_rs.wav",
-                                f0[id,:resynth_length],
-                                mlpg_generated[id,:resynth_length],
-                                 bap_gt_normalised[id,:resynth_length],fs,an=5)
-    
-    preprocessing3.save_resynth(fname + "_p.wav",
-                                f0[id,:resynth_length],
-                                mlpg_p_generated[id,:resynth_length],
-                                 bap_gt_normalised[id,:resynth_length],fs,an=5)
+    preprocessing3.debug_resynth(f0[id,:resynth_length],
+                                 mlpg_generated[id,:resynth_length],
+                                 bap_gt_normalised[id,:resynth_length],
+                                 fs, an=5)
+    preprocessing3.debug_resynth(f0[id,:resynth_length],
+                                 mlpg_p_generated[id,:resynth_length],
+                                 bap_gt_normalised[id,:resynth_length],
+                                 fs, an=5)
+#    preprocessing3.save_resynth(fname + "_gt.wav",
+#                                f0[id,:resynth_length],
+#                                 mfcc_gt_normalised[id,:resynth_length],
+#                                 bap_gt_normalised[id,:resynth_length],fs,an=5)
+#    preprocessing3.save_resynth(fname + "_rs.wav",
+#                                f0[id,:resynth_length],
+#                                mlpg_generated[id,:resynth_length],
+#                                 bap_gt_normalised[id,:resynth_length],fs,an=5)
+#    
+#    preprocessing3.save_resynth(fname + "_p.wav",
+#                                f0[id,:resynth_length],
+#                                mlpg_p_generated[id,:resynth_length],
+#                                 bap_gt_normalised[id,:resynth_length],fs,an=5)
     

@@ -140,9 +140,9 @@ def ema_read_mocha(fname):
         return data
 
 def data_combine():
-    files_m = np.array(glob.glob("dataset/msak*.ema"))
-    files_f = np.array(glob.glob("dataset/fsew*.ema"))
-    files2 = np.array(glob.glob("dataset2/*.ema"))
+    files_m = np.array(sorted(glob.glob("dataset/msak*.ema")))
+    files_f = np.array(sorted(glob.glob("dataset/fsew*.ema")))
+    files2 = np.array(sorted(glob.glob("dataset2/*.ema")))
     points1_m = np.zeros((len(files_m),14))
     points1_f = np.zeros((len(files_f),14))
     points2 = np.zeros((len(files2),14))
@@ -179,31 +179,43 @@ def data_combine():
     for i in plotlist:
         #ax = sns.kdeplot(points1[:,2*i], points1[:,2*i+1],
         #                 shade=True, shade_lowest=False)
-        plt.scatter(points1_m[:,2*i],points1_m[:,2*i+1],marker="+")
+        #plt.scatter(points1_m[:,2*i],points1_m[:,2*i+1],marker="+")
         plt.scatter(points1_f[:,2*i],points1_f[:,2*i+1],marker="+")
     plt.xlabel("x position")
     plt.ylabel("y position")
     plt.title("Initial position of electrodes in MOCHA-TIMIT dataset")
     plt.legend(['T3','T2','T1','Lower incisor','Upper lip', 'Lower lip'])
 
-    #plt.subplot(1,2,2)
-    #for i in plotlist:
-    #    #ax = sns.kdeplot(points2[:,2*i], points2[:,2*i+1],
-    #    #                 shade=True, shade_lowest=False,marker="+")
-    #    plt.scatter(points2[:,2*i],points2[:,2*i+1],marker="+")
-    #    plt.xlabel("x position")
-    #    plt.ylabel("y position")
-    #plt.title("Initial position of electrodes in MNGU0 dataset")
-    #plt.legend(['T3','T2','T1','Lower incisor','Upper lip', 'Lower lip'])
+    plt.subplot(1,2,2)
+    sep = 300
+    for i in plotlist:
+        plt.scatter(points2[:sep,2*i],points2[:sep,2*i+1],marker="+")
+        plt.scatter(points2[sep:,2*i],points2[sep:,2*i+1],marker="+")
+        plt.xlabel("x position")
+        plt.ylabel("y position")
+    plt.title("Initial position of electrodes in MNGU0 dataset")
+    plt.legend(['T3','T2','T1','Lower incisor','Upper lip', 'Lower lip'])
     plt.show()
 
-    points1_mean = np.mean(points1,axis=0)
+    points1_m_mean = np.mean(points1_m,axis=0)
+    points1_f_mean = np.mean(points1_f,axis=0)
     points2_mean = np.mean(points2,axis=0)
-    scale = np.std((points2 - points2_mean),axis=0)/np.std((points1 - points1_mean),axis=0)
-    return scale,points1_mean,points2_mean
+    scale_m = np.std((points2 - points2_mean),axis=0)/np.std((points1_m - points1_m_mean),axis=0)
+    scale_f = np.std((points2 - points2_mean),axis=0)/np.std((points1_f - points1_f_mean),axis=0)
+    
+    points1_m = (points1_m - points1_m_mean)*scale_m + points2_mean
+    points1_f = (points1_f - points1_f_mean)*scale_f + points2_mean
+
+    for i in plotlist:
+        plt.scatter(points1_m[:,2*i],points1_m[:,2*i+1],marker="+")
+        plt.scatter(points1_f[:,2*i],points1_f[:,2*i+1],marker="+")
+        plt.scatter(points2[:,2*i],points2[:,2*i+1],marker="+")
+
+    plt.show()
+    return scale_m,scale_f,points1_m_mean,points1_f_mean,points2_mean
     
 def debug_synth(f0,sp,ap,fs,an=2):
-    sound = pw.synthesize(f0,sp,ap,fs,an)
+    sound = pw.synthesize(f0,sp,ap,fs, an)
     sd.play(sound,fs)
     sd.wait()
 
@@ -220,7 +232,8 @@ def save_resynth(fname,f0_,sp_,ap_,fs,an=2,alpha=0.42,fftbin=1024):
     sound = pw.synthesize(f0_,sp_,ap_,fs,an)
     wavfile.write(fname,fs,sound*3)
 
-save_dir = "processed_mngu0_filtered"
+#save_dir = "processed_mngu0_filtered"
+save_dir = "processed_comb2_filtered"
 
 def preprocess_save_combined(normalisation=True,alpha=0.42,
                              max_length=1000, fs=16000, val_split=0.2,
@@ -232,13 +245,16 @@ def preprocess_save_combined(normalisation=True,alpha=0.42,
     """
 
     if combined:
-        files1 = np.array(glob.glob("dataset2/*.ema"))
-        files2 = np.array(glob.glob("dataset/*.ema"))
-        files = np.concatenate((files1,files2))
+        files1 = np.array(sorted(glob.glob("dataset2/*.ema")))
+        files2_m = np.array(sorted(glob.glob("dataset/msak*.ema")))
+        files2_f = np.array(sorted(glob.glob("dataset/fsew*.ema")))
+        files = np.concatenate((files1,files2_m,files2_f))
     else:
         files = np.array(glob.glob("dataset2/*.ema"))
     np.random.shuffle(files)
+    #files = files[:100]
     total_samples = len(files)
+    
 
     print("Preprocessing " + str(total_samples) + " samples")
 
@@ -264,18 +280,28 @@ def preprocess_save_combined(normalisation=True,alpha=0.42,
     puref0set = np.zeros((total_samples,max_f0_length))
     spset = np.zeros((total_samples,max_f0_length,bins_1 * 2))
     apset = np.zeros((total_samples,max_f0_length,bins_2))
-    scale,mean1,mean2 = data_combine()
+    scale_m,scale_f,points1_m_mean,points1_f_mean,points2_mean = data_combine()
+
+    male_id = []
+    female_id = []
+    mngu0_id = []
     
     # Shuffling train_test ids
     for k,fname in enumerate((files)):
         print(k)
         if "mngu0" in fname:
             data_ = ema_read(fname)
+            mngu0_id.append(k)
         else:
             data_ = ema_read_mocha(fname)
-            data_ = (data_ - mean1)*scale + mean2
+            if "fsew" in fname:
+                female_id.append(k)
+            if "msak" in fname:
+                male_id.append(k)
             data_ = resample(data_,int(np.ceil(data_.shape[0]*2/5)))
 
+        #plt.plot(data_)
+        #plt.show()
         # We dont need the time and present rows
         read_in_length = np.minimum(data_.shape[0],max_length)
         dataset[k,:read_in_length,:-1] = data_[:read_in_length,:]
@@ -345,11 +371,30 @@ def preprocess_save_combined(normalisation=True,alpha=0.42,
 
     if normalisation_input:
 
+        # Normalise the articulographs differently for different references
+        train_male = list(set(train_idx).intersection(male_id))
+        train_female = list(set(train_idx).intersection(female_id))
+        train_mngu0 = list(set(train_idx).intersection(mngu0_id))
+        val_male = list(set(val_idx).intersection(male_id))
+        val_female = list(set(val_idx).intersection(female_id))
+        val_mngu0 = list(set(val_idx).intersection(mngu0_id))
+
         # Normalise ema feature wise but do not return normaliser object
         for j in range(all_channel):
-            scaler_ema = preprocessing.StandardScaler()
-            dataset[train_idx,:,j] = scaler_ema.fit_transform(dataset[train_idx,:,j])
-            dataset[val_idx,:,j] = scaler_ema.transform(dataset[val_idx,:,j])
+            scaler_ema1 = preprocessing.StandardScaler()
+            scaler_ema2 = preprocessing.StandardScaler()
+            scaler_ema3 = preprocessing.StandardScaler()
+            dataset[train_male,:,j] = scaler_ema1.fit_transform(dataset[train_male,:,j])
+            dataset[train_female,:,j] = scaler_ema2.fit_transform(dataset[train_female,:,j])
+            dataset[train_mngu0,:,j] = scaler_ema3.fit_transform(dataset[train_mngu0,:,j])
+            dataset[val_male,:,j] = scaler_ema1.transform(dataset[val_male,:,j])
+            dataset[val_female,:,j] = scaler_ema2.transform(dataset[val_female,:,j])
+            dataset[val_mngu0,:,j] = scaler_ema3.transform(dataset[val_mngu0,:,j])
+        for j in range(7):
+            plt.scatter(dataset[train_male,0,2*j],dataset[train_male,0,2*j + 1])
+            plt.scatter(dataset[train_female,0,2*j],dataset[train_female,0,2*j + 1])
+            plt.scatter(dataset[train_mngu0,0,2*j],dataset[train_mngu0,0,2*j + 1])
+            plt.show()
 
     if normalisation_output:
         # Spectrum scalers
@@ -465,6 +510,6 @@ beginning are padded with zeroes.
 
 #preprocess_save_combined(normalisation=True,alpha=0.42,max_length=1000,
 #                                                                  fs=16000, val_split=0.1,
-#                         noise=False,combined=False)
+#                         noise=False,combined=True)
 
-data_combine()
+#data_combine()
