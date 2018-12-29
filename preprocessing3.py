@@ -1,4 +1,3 @@
-
 # File for preprocessing the MOCHA-TIMIT dataset
 import numpy as np
 import numpy.matlib
@@ -28,14 +27,36 @@ import glob
 
         
 
-# Strips the new line character from the buffer input
 def clean(s):
-    # Byte -> String
+    """
+    Strips the new line character from the buffer input
+    Parameters:
+    -----------
+    s: Byte buffer
+
+    Returns:
+    --------
+    p: string stripped from new-line character
+
+    """
     s = str(s,"utf-8")
     return s.rstrip('\n').strip()
 
-# Handles the .ema files
-def ema_read(fname):
+def core_read(fname,bias):
+    """
+    Reads in a single EMA file
+
+    Parameters:
+    -----------
+    fname: Filename with extension .ema (String)
+    bias: Implicit bias in shape (it is needed in one of the datasets)
+
+    Returns:
+    --------
+    columns: columns name (i.e. which electrode channel) 
+    data: 2D numpy array with sample points x channel
+    """
+    
     columns = {}
     columns["time"] = 0
     columns["present"] = 1
@@ -47,179 +68,139 @@ def ema_read(fname):
         nframes = int(clean(f.readline()).split()[1])
         f.readline() # Byte Order
         nchannels = int(clean(f.readline()).split()[1])
+
         while not 'CommentChar' in str(f.readline(),"utf-8"):
             pass
         f.readline() # empty line
         line = clean(f.readline())
+
         while not "EST_Header_End" in line:
             channel_number = int(line.split()[0].split('_')[1]) + 2
             channel_name = line.split()[1]
             columns[channel_name] = channel_number
             line = clean(f.readline())
+
         string = f.read()
         data = np.fromstring(string, dtype='float32')
-        thing = len(columns)
-        data_ = np.reshape(data, (-1, thing))
-        data = data_
+        data_ = np.reshape(data, (-1, len(columns) + bias ))
 
-        #print(columns)
-        # Fetch indexes for dereferencing
-        px_index = [values for keys,values in columns.items() if "px" in keys]
-        py_index = [values for keys,values in columns.items() if "py" in keys]
-        pz_index = [values for keys,values in columns.items() if "pz" in keys]
+        return columns, data_
 
-        # Substract the reference values
-        data[:,px_index] = data[:,px_index] - data[:,[columns["ref_px"]]]
-        data[:,py_index] = data[:,py_index] - data[:,[columns["ref_py"]]]
-        data[:,pz_index] = data[:,pz_index] - data[:,[columns["ref_pz"]]]
+def ema_read(fname):
+    """
+    Reads in a single EMA file
+    Aldo does the preprocessing based on the MNGU0 needs
 
-        # Select the relevant keys
-        no_keys =  ["ref","newflag","time","present","rms","head","oz","px","ox","oy","taxdist"]
-        keep_keys = [keys for keys,values in columns.items()]
-        for keys,value in columns.items():
-            for no_key in no_keys:
-                if no_key in keys:
-                    try:
-                        keep_keys.remove(keys)
-                    except ValueError:
-                        pass
+    Parameters:
+    -----------
+    fname: Filename with extension .ema (String)
 
-        keep_values = [columns[key] for key in keep_keys]
+    Returns:
+    --------
+    a numpy array with the EMA data (time, channel)
+    """
 
-        data = data[:,keep_values]
+    columns, data = core_read(fname,0)
 
+    # Fetch indexes for dereferencing
+    px_index = [values for keys,values in columns.items() if "px" in keys]
+    py_index = [values for keys,values in columns.items() if "py" in keys]
+    pz_index = [values for keys,values in columns.items() if "pz" in keys]
 
-        for i in range(data.shape[1]):
-            data[:,i] = pd.Series(data[:,i]).interpolate().values
+    # Substract the reference values
+    data[:,px_index] = data[:,px_index] - data[:,[columns["ref_px"]]]
+    data[:,py_index] = data[:,py_index] - data[:,[columns["ref_py"]]]
+    data[:,pz_index] = data[:,pz_index] - data[:,[columns["ref_pz"]]]
 
-        return data
+    # Select which keys to leave out
+    no_keys =  ["ref","newflag","time","present","rms",
+                "head","oz","px","ox","oy","taxdist"]
+
+    keep_keys = [keys for keys,values in columns.items()]
+
+    for keys,value in columns.items():
+        for no_key in no_keys:
+            if no_key in keys:
+                try:
+                    keep_keys.remove(keys)
+                except ValueError:
+                    pass
+
+    keep_values = [columns[key] for key in keep_keys]
+
+    data = data[:,keep_values]
+
+    # Interpolate for nans
+    for i in range(data.shape[1]):
+        data[:,i] = pd.Series(data[:,i]).interpolate().values
+
+    return data
 
   
 def ema_read_mocha(fname):
-    columns = {}
-    columns["time"] = 0
-    columns["present"] = 1
-
-    with open(fname, 'rb') as f:
-
-        line = f.readline() # EST File Track
-        datatype = clean(f.readline()).split()[1]
-        nframes = int(clean(f.readline()).split()[1])
-        f.readline() # Byte Order
-        nchannels = int(clean(f.readline()).split()[1])
-        while not 'CommentChar' in str(f.readline(),"utf-8"):
-            pass
-        f.readline() # empty line
-        line = clean(f.readline())
-        while not "EST_Header_End" in line:
-            channel_number = int(line.split()[0].split('_')[1])
-            channel_name = line.split()[1]
-            columns[channel_name] = channel_number + 2
-            line = clean(f.readline())
-        string = f.read()
-        data = np.fromstring(string, dtype='float32')
-        data_ = np.reshape(data, (-1, len(columns) + 1 ))
-
-        # Filtering
-        # Lower Incisor -> Jaw
-        # Upper Incisor -> Nose
-        # Tongue Dorsum Tongue Blade Tongue Tip
-        # T3 (13,18) T2 (12,16) T1 
-        # T3 (12,18) T2 (11,17) T1 (5,10) LI (3,8) UI (2,6) UL(4,9) LL(5,10)
-        co = columns
-        idx = [co["td_x"],co["td_y"],co["tb_x"],co["tb_y"],co["tt_x"],
-               co["tt_y"],co["li_x"],co["li_y"],co["ui_x"],co["ui_y"],
-               co["ul_x"],co["ul_y"],co["ll_x"],co["ll_y"]]
-
-        
-        data = data_[:,idx]
-        for k in range(data.shape[1]):
-            data[:,k] = savgol_filter(data[:,k], 51, 3)
-            
-        
-        return data
-
-def data_combine():
-    files_m = np.array(sorted(glob.glob("dataset/msak*.ema")))
-    files_f = np.array(sorted(glob.glob("dataset/fsew*.ema")))
-    files2 = np.array(sorted(glob.glob("dataset2/*.ema")))
-    points1_m = np.zeros((len(files_m),14))
-    points1_f = np.zeros((len(files_f),14))
-    points2 = np.zeros((len(files2),14))
-
-    for idx,fname in enumerate(files_m):
-        data_ = ema_read_mocha(fname)
-        points1_m[idx,:] = data_[0,:]
-
-    for idx,fname in enumerate(files_f):
-        data_ = ema_read_mocha(fname)
-        points1_f[idx,:] = data_[0,:]
+    """
+    Reads in a single EMA file
+    Also does the preprocessing based on the MOCHA-TIMIT needs
     
-    for idx,fname in enumerate(files2):
-        data__ = ema_read(fname)
-        points2[idx,:] = data__[0,:]
+    Parameters:
+    -----------
+    fname: Filename with extension .ema (String)
 
-    #sns.set(style="darkgrid")
-    #plotlist = [0,1,2,3,4,5,6,7,10,11,12,13]
-    #plt.plot(data__[:,plotlist])
-    #plt.xlabel("time [s]")
-    #plt.ylabel("electrode positions")
-    #plt.title("Example articulatory recording")
-    #plt.legend(['T3 X','T3 Y',
-    #            'T2 X', 'T2 Y',
-    #            'T1 X', 'T1 Y',
-    #            'Lower incisor X', 'Lower incisor Y',
-    #            'Upper lip X', 'Upper lip Y',
-    #            'Lower lip X', 'Lower lip Y'])
-    #plt.show()
+    Returns:
+    --------
+    a numpy array with the EMA data (time, channel)
+    """
 
-    sns.set(style="darkgrid")
-    plt.subplot(1,2,1)
-    plotlist = [0,1,2,3,5,6]
-    for i in plotlist:
-        #ax = sns.kdeplot(points1[:,2*i], points1[:,2*i+1],
-        #                 shade=True, shade_lowest=False)
-        #plt.scatter(points1_m[:,2*i],points1_m[:,2*i+1],marker="+")
-        plt.scatter(points1_f[:,2*i],points1_f[:,2*i+1],marker="+")
-    plt.xlabel("x position")
-    plt.ylabel("y position")
-    plt.title("Initial position of electrodes in MOCHA-TIMIT dataset")
-    plt.legend(['T3','T2','T1','Lower incisor','Upper lip', 'Lower lip'])
+    co, data_ = core_read(fname,1)
 
-    plt.subplot(1,2,2)
-    sep = 300
-    for i in plotlist:
-        plt.scatter(points2[:sep,2*i],points2[:sep,2*i+1],marker="+")
-        plt.scatter(points2[sep:,2*i],points2[sep:,2*i+1],marker="+")
-        plt.xlabel("x position")
-        plt.ylabel("y position")
-    plt.title("Initial position of electrodes in MNGU0 dataset")
-    plt.legend(['T3','T2','T1','Lower incisor','Upper lip', 'Lower lip'])
-    plt.show()
+    # Selecting channels which will be actually used in training
+    idx = [co["td_x"],co["td_y"],co["tb_x"],co["tb_y"],co["tt_x"],
+           co["tt_y"],co["li_x"],co["li_y"],co["ui_x"],co["ui_y"],
+           co["ul_x"],co["ul_y"],co["ll_x"],co["ll_y"]]
+    data = data_[:,idx]
 
-    points1_m_mean = np.mean(points1_m,axis=0)
-    points1_f_mean = np.mean(points1_f,axis=0)
-    points2_mean = np.mean(points2,axis=0)
-    scale_m = np.std((points2 - points2_mean),axis=0)/np.std((points1_m - points1_m_mean),axis=0)
-    scale_f = np.std((points2 - points2_mean),axis=0)/np.std((points1_f - points1_f_mean),axis=0)
-    
-    points1_m = (points1_m - points1_m_mean)*scale_m + points2_mean
-    points1_f = (points1_f - points1_f_mean)*scale_f + points2_mean
+    for k in range(data.shape[1]):
+        data[:,k] = savgol_filter(data[:,k], 51, 3)
 
-    for i in plotlist:
-        plt.scatter(points1_m[:,2*i],points1_m[:,2*i+1],marker="+")
-        plt.scatter(points1_f[:,2*i],points1_f[:,2*i+1],marker="+")
-        plt.scatter(points2[:,2*i],points2[:,2*i+1],marker="+")
+    return data
 
-    plt.show()
-    return scale_m,scale_f,points1_m_mean,points1_f_mean,points2_mean
-    
 def debug_synth(f0,sp,ap,fs,an=2):
+    """
+    Plays a synthetised audio
+
+    Parameters:
+    -----------
+    Parameters from the PyWORLD vocoder
+
+    f0: fundamental frequency
+    sp: spectrum
+    ap: band aperiodcities
+    fs: sampling frequency (typically 16000)
+    an: length of the analysis window
+
+    """
+    
     sound = pw.synthesize(f0,sp,ap,fs, an)
     sd.play(sound,fs)
     sd.wait()
 
 def debug_resynth(f0_,sp_,ap_,fs,an=2,alpha=0.42,fftbin=1024):
+    """
+    Plays a synthetised audio from the encoded parameters
+    It is good to perform quick analysis-resynthesis
+
+    Parameters:
+    -----------
+    Parameters from the PyWORLD vocoder
+
+    f0: fundamental frequency
+    sp: spectrum
+    ap: band aperiodcities
+    fs: sampling frequency (typically 16000)
+    an: length of the analysis window
+    alpha: pre-emphasis filtering coefficient
+    fftbin: bin-size of the underlying FFT 
+    """
     sp_ = sptk.conversion.mc2sp(sp_, alpha, fftbin)
     ap_ = pw.decode_aperiodicity(ap_, fs, fftbin)
     sound = pw.synthesize(f0_,sp_,ap_,fs,an)
@@ -227,38 +208,45 @@ def debug_resynth(f0_,sp_,ap_,fs,an=2,alpha=0.42,fftbin=1024):
     sd.wait()
 
 def save_resynth(fname,f0_,sp_,ap_,fs,an=2,alpha=0.42,fftbin=1024):
+    """
+    Plays a synthetised audio from the encoded parameters
+    It is good to perform quick analysis-resynthesis
+    It also saves the file in WAV format
+
+    Parameters:
+    -----------
+    Parameters from the PyWORLD vocoder
+
+    f0: fundamental frequency
+    sp: spectrum
+    ap: band aperiodcities
+    fs: sampling frequency (typically 16000)
+    an: length of the analysis window
+    alpha: pre-emphasis filtering coefficient
+    fftbin: bin-size of the underlying FFT 
+
+    """
     sp_ = sptk.conversion.mc2sp(sp_, alpha, fftbin)
     ap_ = pw.decode_aperiodicity(ap_, fs, fftbin)
     sound = pw.synthesize(f0_,sp_,ap_,fs,an)
+    sd.play(sound*3,fs)
+    sd.wait()
     wavfile.write(fname,fs,sound*3)
 
-#save_dir = "processed_mngu0_filtered"
-save_dir = "processed_comb2_filtered"
-
-def preprocess_save_combined(normalisation=True,alpha=0.42,
-                             max_length=1000, fs=16000, val_split=0.2,
-                             noise=False,combined=False, bins_1 = 41,
-                             bins_2 = 1, normalisation_input = True,
-                             normalisation_output = True):
+def train_val_split(files,val_split):
     """
-    Normalisation
+    Partitions the list into training and validation
+
+    Parameters:
+    -----------
+    files: concatenated list with filenames
+    val_split: percentage of validation split
+
+    Returns:
+    train_idx: training ids
+    val_idx: validation ids
     """
 
-    if combined:
-        files1 = np.array(sorted(glob.glob("dataset2/*.ema")))
-        files2_m = np.array(sorted(glob.glob("dataset/msak*.ema")))
-        files2_f = np.array(sorted(glob.glob("dataset/fsew*.ema")))
-        files = np.concatenate((files1,files2_m,files2_f))
-    else:
-        files = np.array(glob.glob("dataset2/*.ema"))
-    np.random.shuffle(files)
-    #files = files[:100]
-    total_samples = len(files)
-    
-
-    print("Preprocessing " + str(total_samples) + " samples")
-
-    # Partion the list into training and validation file lists to avoid memory overhead
     indices = np.arange(len(files))
     np.random.shuffle(indices)
 
@@ -269,25 +257,72 @@ def preprocess_save_combined(normalisation=True,alpha=0.42,
     val_idx = indices[:validation_size]
     train_idx = indices[validation_size:]
 
-    # Some built-in parameters
-    all_channel = 14
-    max_f0_length = max_length
-    factor = 80
-    # Audio is down sampled appropriately by the analysis window
-    max_audio_length = max_length
+    return train_idx,val_idx
+
+save_dir = "processed_comb2_filtered"
+
+def preprocess_save_combined(normalisation=True,alpha=0.42,
+                             max_length=1000, fs=16000, val_split=0.2,
+                             noise=False,combined=False, bins_1 = 41,
+                             bins_2 = 1, normalisation_input = True,
+                             normalisation_output = True,
+                             channel_number = 14,
+                             factor = 80):
+    """
+    The main entry point to the preprocessing pipeline
+
+    Parameters:
+    -----------
+    normalisation: whether to perform feature-wise normalisation
+    alpha: pre-emphasis filtering
+    max_length: maximum samples of speech and EMA. It is one to one
+    because both is downsampled appropriately
+    val_split: percentage validation split
+    noise: whether to add noise to the data (generally a bad idea)
+    combined: whether to use a single dataset (MNGU0) or the combined
+    bins_1: MFCC channel numbers
+    bins_2: BAP channel numbers
+    normalisation_input: whether to normalise the EMA feature-wise
+    normalisation_output: whether to normalise ths speech feature-wise
+    channel_number: number of electrode channels in the files.
+    factor: downsampling factor used    
+
+    --------
+    """
+
+    # Fetching and shuffling the appropriate file lists
+    if combined:
+        files1 = np.array(sorted(glob.glob("dataset2/*.ema")))
+        files2_m = np.array(sorted(glob.glob("dataset/msak*.ema")))
+        files2_f = np.array(sorted(glob.glob("dataset/fsew*.ema")))
+        files = np.concatenate((files1,files2_m,files2_f))
+    else:
+        files = np.array(glob.glob("dataset2/*.ema"))
+    np.random.shuffle(files)
+    total_samples = len(files)
     
+
+    print("Preprocessing " + str(total_samples) + " samples")
+
+    train_idx, val_idx = train_val_split(files,0.2)
+
+    max_f0_length = max_length
+    max_audio_length = max_length
+
+    # Preallocation of memory
     dataset = np.zeros((total_samples,max_length,all_channel+1))
     puref0set = np.zeros((total_samples,max_f0_length))
     spset = np.zeros((total_samples,max_f0_length,bins_1 * 2))
     apset = np.zeros((total_samples,max_f0_length,bins_2))
-    scale_m,scale_f,points1_m_mean,points1_f_mean,points2_mean = data_combine()
 
+    # Which ID correspond to which dataset, male, female 
     male_id = []
     female_id = []
     mngu0_id = []
-    
-    # Shuffling train_test ids
+
+    # Append the appropriate id and read files
     for k,fname in enumerate((files)):
+        # Indicate progress
         print(k)
         if "mngu0" in fname:
             data_ = ema_read(fname)
@@ -298,11 +333,10 @@ def preprocess_save_combined(normalisation=True,alpha=0.42,
                 female_id.append(k)
             if "msak" in fname:
                 male_id.append(k)
+            # Resample so the datasets have same sampling frequency
             data_ = resample(data_,int(np.ceil(data_.shape[0]*2/5)))
 
-        #plt.plot(data_)
-        #plt.show()
-        # We dont need the time and present rows
+        # We don't need the time and present rows
         read_in_length = np.minimum(data_.shape[0],max_length)
         dataset[k,:read_in_length,:-1] = data_[:read_in_length,:]
 
@@ -313,26 +347,17 @@ def preprocess_save_combined(normalisation=True,alpha=0.42,
             dataset[np.isnan(dataset)] = 0
             print("Warning! Zeroed a NaN")
 
-        # Read wav
-        wav_path = fname[:-3 or None] + "wav"
+        fname_wo_extension = fname[:-3 or None]
+        wav_path = fname_wo_extension + "wav"
         sound_data, fs = sf.read(wav_path)
-
-        # DEBUG: SD play check
-        #sd.play(sound_data,fs)
-        #sd.wait()
-        # Read in either to max lenth (truncation) or when data is available (zero padding)
 
         f0, sp, ap = pw.wav2world(sound_data, fs, 5) # 2
 
-        # SP Trajectory smoothing
-
+        # The general way is to either truncate or zero-pad
         read_in_length = np.minimum(f0.shape[0],max_f0_length)
         dataset[k,:read_in_length,all_channel] = f0[:read_in_length]
-        # DEBUG: resynth
-        #debug_synth(f0,sp,ap,fs,5)
 
         # Because of the 0th order spectra is needed, we use -1 for bin size
-
         sp = sptk.conversion.sp2mc(sp, bins_1 - 1, alpha)
 
         # TODO: Assumed here that the analysis window is the hop length
@@ -352,7 +377,6 @@ def preprocess_save_combined(normalisation=True,alpha=0.42,
         # DEBUG: Decode spectral envelope
         dummy_var = 0.001*np.ones((sp_delta.shape[0],sp_delta.shape[1]))
         sp_dec = mlpg(sp_delta,dummy_var,windows)
-        #debug_resynth(f0,sp_dec,ap,fs,5)
 
         # Pure f0set
         read_in_length = np.minimum(f0.shape[0],max_f0_length)
@@ -366,8 +390,6 @@ def preprocess_save_combined(normalisation=True,alpha=0.42,
         read_in_length = np.minimum(ap.shape[0],max_f0_length)
         apset[k,0:read_in_length,:] = ap[0:read_in_length,:]
 
-        #sp_dec = mlpg(spset[k,:read_in_length,:],dummy_var[:read_in_length,:],windows)
-        #debug_resynth(puref0set[k,:read_in_length],sp_dec,apset[k,:read_in_length,:],fs,5)
 
     if normalisation_input:
 
@@ -390,11 +412,6 @@ def preprocess_save_combined(normalisation=True,alpha=0.42,
             dataset[val_male,:,j] = scaler_ema1.transform(dataset[val_male,:,j])
             dataset[val_female,:,j] = scaler_ema2.transform(dataset[val_female,:,j])
             dataset[val_mngu0,:,j] = scaler_ema3.transform(dataset[val_mngu0,:,j])
-        for j in range(7):
-            plt.scatter(dataset[train_male,0,2*j],dataset[train_male,0,2*j + 1])
-            plt.scatter(dataset[train_female,0,2*j],dataset[train_female,0,2*j + 1])
-            plt.scatter(dataset[train_mngu0,0,2*j],dataset[train_mngu0,0,2*j + 1])
-            plt.show()
 
     if normalisation_output:
         # Spectrum scalers
@@ -421,22 +438,54 @@ def preprocess_save_combined(normalisation=True,alpha=0.42,
     joblib.dump(scaler_sp, save_dir + '/scaler_sp_.pkl')
     joblib.dump(scaler_ap, save_dir + '/scaler_ap_.pkl')
 
+
+def delay_signal(signal,delay):
+    """
+    Wrapper for numpy boilerplate for delaying the signal.
+    The idea is that signal can be delay by shifting and zero padding
+    in the beginning.
+    
+
+    Parameters:
+    -----------
+    signal: The signals are assumed to be tensors of either (Sample X 
+    Time x Channel) or (Sample X Time)
+
+    Returns: 
+    delayed_signal: the delayed signal same shape as signal
+    """
+
+    assert len(signal.shape) < 4, "Invalid signal shape"
+    assert len(signal.shape) < 1, "Invalid signal shape"
+    if len(signal.shape) == 2:
+        delayed_signal = np.pad(signal,
+                                ((0,0),(delay,0)),
+                                mode="constant")[:,:-delay]
+    else:
+        delayed_signal = np.pad(signal,
+                                ((0,0),(delay,0),(0,0)),
+                                mode="constant")[:,:-delay,:]
+    return delayed_signal
+
 def load_test(delay,percentage=1):
-    """Loads the data from the preprocessed numpy arrays
-
-    Keyword arguments:
-    - delay - the amount of delay in samples to apply to the output data. The samples at the
-beginning are padded with zeroes.
-    - percentage - percentage of the dedicated training data to actually use for training. This is useful to change in order to see if model performance is data-limited
-
+    """
+    Loads the dataset for testing.
+    
+    Parameters:
+    -----------
+    delay: number of delay to use
+    percentage: percentage of the dataset to load. TODO: Does not
+    really make sense for testing, should be deprecated.
+    
+    Returns:
+    --------
+    The test sets as numpy arrays and the scaler objects
     """
     
     dataset = np.load(save_dir + "/dataset_.npy")
-    #f0set = np.load("processed/f0set_.npy")
     spset = np.load(save_dir + "/spset_.npy")
     apset = np.load(save_dir + "/apset_.npy")
     puref0set = np.load(save_dir + "/puref0set_.npy")
-    #scaler_f0 = joblib.load('processed/scaler_f0_.pkl')
     scaler_sp = joblib.load(save_dir + '/scaler_sp_.pkl')
     scaler_ap = joblib.load(save_dir + '/scaler_ap_.pkl')
     train_idx = np.load(save_dir + "/train_idx_.npy")
@@ -447,25 +496,24 @@ beginning are padded with zeroes.
     train_idx = train_idx[:keep_amount]
     
     ema_test = dataset[test_idx,:,:]
-    # Padding f0
-    puref0_test = np.pad(puref0set[test_idx,:],((0,0),(delay,0)), mode="constant")[:,:-delay]
-
-    # Padding spectra
-    sp_test = np.pad(spset[test_idx,:,:],((0,0),(delay,0),(0,0)), mode="constant")[:,:-delay,:]
-
-    # Padding ap
-    ap_test = np.pad(apset[test_idx,:,:],((0,0),(delay,0),(0,0)), mode="constant")[:,:-delay]
+    puref0_test = delay_signal(puref0set[test_idx,:],delay)
+    sp_test = delay_signal(spset[test_idx,:,:],delay)
+    ap_test = delay_signal(apset[test_idx,:,:],delay)
 
     return ema_test, sp_test, ap_test,puref0_test, None, scaler_sp, \
         scaler_ap
 def load_data(delay,percentage=1):
-    """Loads the data from the preprocessed numpy arrays
-
-    Keyword arguments:
-    - delay - the amount of delay in samples to apply to the output data. The samples at the
-beginning are padded with zeroes.
-    - percentage - percentage of the dedicated training data to actually use for training. This is useful to change in order to see if model performance is data-limited
-
+    """
+    Loads the dataset for testing AND training.
+    
+    Parameters:
+    -----------
+    delay: number of delay to use
+    percentage: percentage of the dataset to load. 
+    
+    Returns:
+    --------
+    The test sets as numpy arrays and the scaler objects
     """
     
     dataset = np.load(save_dir + "/dataset_.npy")
@@ -473,7 +521,6 @@ beginning are padded with zeroes.
     apset = np.load(save_dir + "/apset_.npy")
     scaler_sp = joblib.load(save_dir + '/scaler_sp_.pkl')
     train_idx = np.load(save_dir + "/train_idx_.npy")
-#    wavdata = np.load(save_dir + "/wavdata.npy")
     test_idx = np.load(save_dir + "/val_idx_.npy")
 
     # Reduce training id size. It is shuffled by default so it is not reshuffled for brevity
@@ -489,18 +536,18 @@ beginning are padded with zeroes.
     f0_test = None
     f0set = None
     
-    # Padding spectra
-    sp_train = np.pad(spset[train_idx,:,:],((0,0),(delay,0),(0,0)), mode="constant")[:,:-delay]
-    sp_test = np.pad(spset[test_idx,:,:],((0,0),(delay,0),(0,0)), mode="constant")[:,:-delay,:]
+    sp_train = delay_signal(spset[train_idx,:,:],delay)
+    sp_test = delay_signal(spset[test_idx,:,:],delay)
     spset = None
-    # Padding ap
-    ap_train = np.pad(apset[train_idx,:,:],((0,0),(delay,0),(0,0)), mode="constant")[:,:-delay]
-    ap_test = np.pad(apset[test_idx,:,:],((0,0),(delay,0),(0,0)), mode="constant")[:,:-delay]
+
+    ap_train = delay_signal(apset[train_idx,:,:],delay)
+    ap_test = delay_signal(apset[test_idx,:,:],delay)
     apset = None
-    # Unprocssed f0
+
     givenf0_train = None
     givenf0_test = None
     givenf0set = None
+
     return ema_train, ema_test, \
         None, None, \
         sp_train, sp_test, \
@@ -512,4 +559,3 @@ beginning are padded with zeroes.
 #                                                                  fs=16000, val_split=0.1,
 #                         noise=False,combined=True)
 
-#data_combine()
