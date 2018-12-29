@@ -8,7 +8,7 @@ import scipy.signal as signal
 from nnmnkwii.metrics import melcd
 from nnmnkwii.paramgen import mlpg
 from nnmnkwii.preprocessing import trim_zeros_frames
-
+import seaborn as sns
 
 
 from keras_layer_normalization import LayerNormalization
@@ -28,12 +28,28 @@ ema_test, sp_test, ap_test, givenf0_test, scaler_f0, scaler_sp, \
 
 
 # Method 1: Clip derivative
-#t = 0.01
-#ema_4_diff = np.diff(ema_test[id,:,4])
-#ema_4_diff[ema_4_diff > t] = t
-#ema_4 = np.cumsum(np.insert(ema_4_diff,0,ema_test[id,0,4]))
 
+id = 4
+sns.set_style("darkgrid")
+plt.subplot(1,2,1)
 
+plt.plot(ema_test[id,:,4])
+plt.title("Original EMA signal for tongue tip")
+plt.ylim([-2, 3.5])
+plt.xlabel("time [s]")
+plt.ylabel("normalised x position")
+t = 0.1
+ema_4_diff = np.diff(ema_test[id,:,4])
+ema_4_diff[ema_4_diff > t] = t
+ema_4_diff[ema_4_diff < -t] = -t
+ema_4 = np.cumsum(np.insert(ema_4_diff,0,ema_test[id,0,4]))
+plt.subplot(1,2,2)
+plt.plot(ema_4)
+plt.title("Modified EMA signal for tongue tip")
+plt.ylim([-2, 3.5])
+plt.xlabel("time [s]")
+plt.ylabel("normalised x position")
+plt.show()
 #ema_9_diff = np.diff(ema_test[id,:,9])
 #ema_9_diff[ema_9_diff > t] = t
 #ema_9 = np.cumsum(np.insert(ema_9_diff,0,ema_test[id,0,9]))

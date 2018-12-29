@@ -12,7 +12,7 @@ import time
 import pyworld as pw
 
 from keras.models import load_model
-from models import model_takuragi,model_gru, model_bigru, model_blstm, model_blstm2
+from models import model_takuragi,model_gru, model_bigru, model_blstm, model_blstm2, blstm_ae
 from keras.callbacks import Callback, EarlyStopping, TensorBoard, ModelCheckpoint
 from keras import optimizers
 from keras.losses import mean_squared_error
@@ -61,8 +61,9 @@ options = {
     "seed": 10,
     "noise": 0,
     "delay": 1, # 25 
-    "batch_size": 45, #90
-    "percentage": 1
+    "batch_size": 25, #90
+    "percentage": 1,
+    "latent_features": 10
 }
 
 ex.add_config(options)
@@ -94,8 +95,8 @@ def my_main(_config,_run):
     tb = TensorBoard(log_dir="logs/" + date_string + "_" + str(options["noise"]))
     #es = EarlyStopping(monitor="val_loss", min_delta=0.01, patience=100,
     #                   restore_best_weights=True)
-    mc = ModelCheckpoint("checkpoints/model_sp_comb_lstm_d.hdf5" , save_best_only=True)
-    model = model_blstm2.LSTM_Model(options)    
+    mc = ModelCheckpoint("checkpoints/model_sp_comb_ae.hdf5" , save_best_only=True)
+    model = blstm_ae.LSTM_Model(options)    
     adam_optimiser = optimizers.Adam(lr=options["lr"])
     sgd_optimiser = optimizers.SGD(lr=options["lr"])
     rmsprop_optimiser = optimizers.RMSprop(lr=options["lr"],clipvalue=5)
@@ -115,11 +116,21 @@ def my_main(_config,_run):
             #static_pred[i,:,:] = mlpg(x_pred[i,:,:],dummy_var,windows)
             #static_true[i,:,:] = mlpg(x_true[i,:,:],dummy_var,windows)
        # return mean_squared_error(static_true, static_pred)
+    model.encode_trainer.compile(optimizer=rmsprop_optimiser, loss="mse")
+    try:
+        model.encode_trainer.fit(sp_train, ema_train, validation_data=(sp_test,ema_test),
+                      epochs=options["epochs"],
+                      batch_size=options["batch_size"],
+                      callbacks=[LossHistory(_run,learning_curve),
+                                 mc,
+                                 tb])
+    except KeyboardInterrupt:
+        print("Training interrupted")
 
-    
     model.trainer.compile(optimizer=rmsprop_optimiser, loss="mse")
     try:
-        model.trainer.fit(ema_train, sp_train, validation_data=(ema_test,sp_test),
+        latent_zero = np.zeros((2046,1000,options["latent_features"]))
+        model.trainer.fit(ema_train, [ema_train,sp_train], validation_data=(ema_test,[ema_test,sp_test]),
                       epochs=options["epochs"],
                       batch_size=options["batch_size"],
                       callbacks=[LossHistory(_run,learning_curve),

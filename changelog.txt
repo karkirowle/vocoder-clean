@@ -1,0 +1,13 @@
+
+
+---
+Added changelog
+
+Removed old preprocessing from version control
+Added encoder-decoder type of fitting called experiment2.py
+Respective model files are added to models
+Restructured some of the directories
+
+
+
+
