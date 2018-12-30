@@ -1,8 +1,5 @@
-# File for preprocessing the MOCHA-TIMIT dataset
 import numpy as np
-import numpy.matlib
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 import soundfile as sf
 import sounddevice as sd
@@ -11,7 +8,8 @@ import time
 
 from sklearn import preprocessing
 from sklearn.externals import joblib
-from scipy.signal import decimate,savgol_filter,resample_poly,resample
+from scipy.signal import decimate,savgol_filter,resample
+
 # Speech processing frameworks
 import pyworld as pw
 import python_speech_features as psf
@@ -89,7 +87,7 @@ def core_read(fname,bias):
 def ema_read(fname):
     """
     Reads in a single EMA file
-    Aldo does the preprocessing based on the MNGU0 needs
+    Aldo does the preprocessing based on the MNGU0 dataset needs
 
     Parameters:
     -----------
@@ -164,77 +162,11 @@ def ema_read_mocha(fname):
 
     return data
 
-def debug_synth(f0,sp,ap,fs,an=2):
+
+def train_val_split(files,val_split,k=10):
     """
-    Plays a synthetised audio
+    TODO: Perform 10-fold cross-validation
 
-    Parameters:
-    -----------
-    Parameters from the PyWORLD vocoder
-
-    f0: fundamental frequency
-    sp: spectrum
-    ap: band aperiodcities
-    fs: sampling frequency (typically 16000)
-    an: length of the analysis window
-
-    """
-    
-    sound = pw.synthesize(f0,sp,ap,fs, an)
-    sd.play(sound,fs)
-    sd.wait()
-
-def debug_resynth(f0_,sp_,ap_,fs,an=2,alpha=0.42,fftbin=1024):
-    """
-    Plays a synthetised audio from the encoded parameters
-    It is good to perform quick analysis-resynthesis
-
-    Parameters:
-    -----------
-    Parameters from the PyWORLD vocoder
-
-    f0: fundamental frequency
-    sp: spectrum
-    ap: band aperiodcities
-    fs: sampling frequency (typically 16000)
-    an: length of the analysis window
-    alpha: pre-emphasis filtering coefficient
-    fftbin: bin-size of the underlying FFT 
-    """
-    sp_ = sptk.conversion.mc2sp(sp_, alpha, fftbin)
-    ap_ = pw.decode_aperiodicity(ap_, fs, fftbin)
-    sound = pw.synthesize(f0_,sp_,ap_,fs,an)
-    sd.play(sound*3,fs)
-    sd.wait()
-
-def save_resynth(fname,f0_,sp_,ap_,fs,an=2,alpha=0.42,fftbin=1024):
-    """
-    Plays a synthetised audio from the encoded parameters
-    It is good to perform quick analysis-resynthesis
-    It also saves the file in WAV format
-
-    Parameters:
-    -----------
-    Parameters from the PyWORLD vocoder
-
-    f0: fundamental frequency
-    sp: spectrum
-    ap: band aperiodcities
-    fs: sampling frequency (typically 16000)
-    an: length of the analysis window
-    alpha: pre-emphasis filtering coefficient
-    fftbin: bin-size of the underlying FFT 
-
-    """
-    sp_ = sptk.conversion.mc2sp(sp_, alpha, fftbin)
-    ap_ = pw.decode_aperiodicity(ap_, fs, fftbin)
-    sound = pw.synthesize(f0_,sp_,ap_,fs,an)
-    sd.play(sound*3,fs)
-    sd.wait()
-    wavfile.write(fname,fs,sound*3)
-
-def train_val_split(files,val_split):
-    """
     Partitions the list into training and validation
 
     Parameters:
@@ -246,8 +178,8 @@ def train_val_split(files,val_split):
     train_idx: training ids
     val_idx: validation ids
     """
-
-    indices = np.arange(len(files))
+    total_samples = len(files)
+    indices = np.arange(total_samples)
     np.random.shuffle(indices)
 
     assert val_split < 1 and val_split > 0, \
@@ -259,15 +191,91 @@ def train_val_split(files,val_split):
 
     return train_idx,val_idx
 
-save_dir = "processed_comb2_filtered"
+def nan_check(dataset):
+    """
+    Checks a numpy array for nans and prints a "warning"
 
-def preprocess_save_combined(normalisation=True,alpha=0.42,
+    Parameters:
+    -----------
+    dataset: numpy array
+    """
+    if np.isnan(dataset).any():
+        dataset[np.isnan(dataset)] = 0
+        print("Warning! Zeroed a NaN")
+
+def sp_delta_generation(sp,mfcc_bins,alpha,hop_length):
+    """
+    Takes a sound file and generates the MFCC static and delta 
+    features.
+
+    Parameters:
+    -----------
+    sp: numpy array containing spectrum for each analysis window
+    mfcc_bins: number of MFCC bins
+    alpha: pre-emphasis filter coefficients
+    hop_length: ?
+
+    Returns:
+    --------
+    sp_delta: MFCC and delta features in one combined numpy array
+    """
+    # Because of the 0th order spectra is needed, we use -1 for bin
+    sp = sptk.conversion.sp2mc(sp, mfcc_bins - 1, alpha)
+
+    # TODO: what the hell is the hop length
+    s_sp = modspec_smoothing(sp,hop_length)
+
+    # Getting the delta features
+    windows = [
+        (0, 0, np.array([1.0])),            # static
+        (1, 1, np.array([-0.5, 0.0, 0.5])), # delta
+    ]
+    sp_delta = delta_features(s_sp,windows)
+
+    return sp_delta
+
+def mlpg_postprocessing(mfcc, bins_1, scaler_sp):
+    """
+    Takes the static and delta features, converts back and unnormalises
+
+    Parameters:
+    ----------
+    mfcc: (N x T X bins_1) array
+    bins_1: number of static + delta coefficients + power 
+    scaler_sp: normalisation object
+
+    Return:
+    -------
+    MFCC features after maximum likelihood parameter generations
+    """
+
+    windows = [
+        (0, 0, np.array([1.0])),            # static
+        (1, 1, np.array([-0.5, 0.0, 0.5])), # delta
+    ]
+
+    N = mfcc.shape[0]
+    T = mfcc.shape[1]
+    
+    mlpg_generated = np.zeros((N,T,bins_1))
+    
+    for i in range(N):
+        mlpg_generated[i,:,:] = mlpg(mfcc[i,:,:],
+                                     np.ones((T,bins_1 * 2)),
+                                     windows)
+    for i in range(len(scaler_sp)):
+        mlpg_generated[:,:,i] = scaler_sp[i].inverse_transform(mlpg_generated[:,:,i])
+    
+    return mlpg_generated
+
+def preprocess_save_combined(alpha=0.42,
                              max_length=1000, fs=16000, val_split=0.2,
                              noise=False,combined=False, bins_1 = 41,
                              bins_2 = 1, normalisation_input = True,
                              normalisation_output = True,
                              channel_number = 14,
-                             factor = 80):
+                             factor = 80,
+                             save_dir = "processed_comb2_filtered_2"):
     """
     The main entry point to the preprocessing pipeline
 
@@ -299,53 +307,46 @@ def preprocess_save_combined(normalisation=True,alpha=0.42,
     else:
         files = np.array(glob.glob("dataset2/*.ema"))
     np.random.shuffle(files)
-    total_samples = len(files)
-    
 
+    total_samples = len(files)
     print("Preprocessing " + str(total_samples) + " samples")
 
     train_idx, val_idx = train_val_split(files,0.2)
 
-    max_f0_length = max_length
-    max_audio_length = max_length
 
     # Preallocation of memory
-    dataset = np.zeros((total_samples,max_length,all_channel+1))
-    puref0set = np.zeros((total_samples,max_f0_length))
-    spset = np.zeros((total_samples,max_f0_length,bins_1 * 2))
-    apset = np.zeros((total_samples,max_f0_length,bins_2))
+    dataset = np.zeros((total_samples,max_length,channel_number+1))
+    puref0set = np.zeros((total_samples,max_length))
+    spset = np.zeros((total_samples,max_length,bins_1 * 2))
+    apset = np.zeros((total_samples,max_length,bins_2))
 
-    # Which ID correspond to which dataset, male, female 
-    male_id = []
-    female_id = []
-    mngu0_id = []
+    # Which ID correspond to which dataset, male, female
+    cat_id = { "male": [],
+               "female": [],
+               "mngu0": []}
 
     # Append the appropriate id and read files
-    for k,fname in enumerate((files)):
-        # Indicate progress
-        print(k)
+    for k,fname in tqdm.tqdm(enumerate((files)), total=len(files)):
+
         if "mngu0" in fname:
-            data_ = ema_read(fname)
-            mngu0_id.append(k)
+            data = ema_read(fname)
+            cat_id["mngu0"].append(k)
         else:
-            data_ = ema_read_mocha(fname)
+            data = ema_read_mocha(fname)
             if "fsew" in fname:
-                female_id.append(k)
+                cat_id["female"].append(k)
             if "msak" in fname:
-                male_id.append(k)
+                cat_id["male"].append(k)
             # Resample so the datasets have same sampling frequency
-            data_ = resample(data_,int(np.ceil(data_.shape[0]*2/5)))
+            data = resample(data,int(np.ceil(data.shape[0]*2/5)))
 
         # We don't need the time and present rows
-        read_in_length = np.minimum(data_.shape[0],max_length)
-        dataset[k,:read_in_length,:-1] = data_[:read_in_length,:]
+        read_in_length = np.minimum(data.shape[0],max_length)
+        dataset[k,:read_in_length,:-1] = data[:read_in_length,:]
 
-        # Repeating last elements
-        if (max_length > data_.shape[0]):
-            dataset[k,data_.shape[0]:,:-1] = data_[data_.shape[0]-1,:]
-        if np.isnan(dataset).any():
-            dataset[np.isnan(dataset)] = 0
-            print("Warning! Zeroed a NaN")
+        # Repeating last elements if the samples are not the same
+        if (max_length > data.shape[0]):
+            dataset[k,data.shape[0]:,:-1] = data[data.shape[0]-1,:]
 
         fname_wo_extension = fname[:-3 or None]
         wav_path = fname_wo_extension + "wav"
@@ -354,65 +355,39 @@ def preprocess_save_combined(normalisation=True,alpha=0.42,
         f0, sp, ap = pw.wav2world(sound_data, fs, 5) # 2
 
         # The general way is to either truncate or zero-pad
-        read_in_length = np.minimum(f0.shape[0],max_f0_length)
-        dataset[k,:read_in_length,all_channel] = f0[:read_in_length]
+        T = f0.shape[0]
+        read_in_length = np.minimum(T,max_length)
+        dataset[k,:read_in_length,channel_number] = f0[:read_in_length]
 
-        # Because of the 0th order spectra is needed, we use -1 for bin size
-        sp = sptk.conversion.sp2mc(sp, bins_1 - 1, alpha)
+        sp_delta = sp_delta_generation(sp,bins_1,alpha,200)
 
-        # TODO: Assumed here that the analysis window is the hop length
-        hop_length = 20
-        s_sp = modspec_smoothing(sp,200)
-
-        # Getting the delta features
-        windows = [
-            (0, 0, np.array([1.0])),            # static
-            (1, 1, np.array([-0.5, 0.0, 0.5])), # delta
-        ]
-        sp_delta = delta_features(s_sp,windows)
-
-        # Encode the spectral envelopes
         ap = pw.code_aperiodicity(ap, fs)
 
-        # DEBUG: Decode spectral envelope
-        dummy_var = 0.001*np.ones((sp_delta.shape[0],sp_delta.shape[1]))
-        sp_dec = mlpg(sp_delta,dummy_var,windows)
-
-        # Pure f0set
-        read_in_length = np.minimum(f0.shape[0],max_f0_length)
-        puref0set[k,0:read_in_length] = f0[0:read_in_length]
-
-        # Spectrum
-        read_in_length = np.minimum(sp.shape[0],max_f0_length)
-        spset[k,0:read_in_length,:] = sp_delta[0:read_in_length,:]
-
-        # Band aperiodicites
-        read_in_length = np.minimum(ap.shape[0],max_f0_length)
-        apset[k,0:read_in_length,:] = ap[0:read_in_length,:]
+        puref0set[k,:read_in_length] = f0[:read_in_length]
+        spset[k,:read_in_length,:] = sp_delta[:read_in_length,:]
+        apset[k,:read_in_length,:] = ap[:read_in_length,:]
 
 
     if normalisation_input:
 
         # Normalise the articulographs differently for different references
-        train_male = list(set(train_idx).intersection(male_id))
-        train_female = list(set(train_idx).intersection(female_id))
-        train_mngu0 = list(set(train_idx).intersection(mngu0_id))
-        val_male = list(set(val_idx).intersection(male_id))
-        val_female = list(set(val_idx).intersection(female_id))
-        val_mngu0 = list(set(val_idx).intersection(mngu0_id))
+        cats = ["male", "female", "mngu0"]
+        train_cat_id = {}
+        val_cat_id = {}
+        
+        for cat in cats:
+            train_cat_id[cat] = list(set(train_idx).intersection(cat_id[cat]))
+            val_cat_id[cat] = list(set(val_idx).intersection(cat_id[cat]))
 
         # Normalise ema feature wise but do not return normaliser object
-        for j in range(all_channel):
-            scaler_ema1 = preprocessing.StandardScaler()
-            scaler_ema2 = preprocessing.StandardScaler()
-            scaler_ema3 = preprocessing.StandardScaler()
-            dataset[train_male,:,j] = scaler_ema1.fit_transform(dataset[train_male,:,j])
-            dataset[train_female,:,j] = scaler_ema2.fit_transform(dataset[train_female,:,j])
-            dataset[train_mngu0,:,j] = scaler_ema3.fit_transform(dataset[train_mngu0,:,j])
-            dataset[val_male,:,j] = scaler_ema1.transform(dataset[val_male,:,j])
-            dataset[val_female,:,j] = scaler_ema2.transform(dataset[val_female,:,j])
-            dataset[val_mngu0,:,j] = scaler_ema3.transform(dataset[val_mngu0,:,j])
-
+        for j in range(channel_number):
+            for cat in cats:
+                scaler_ema = preprocessing.StandardScaler()
+                tidx = train_cat_id[cat]
+                vidx = val_cat_id[cat]
+                dataset[tidx,:,j] = scaler_ema.fit_transform(dataset[tidx,:,j])
+                dataset[vidx,:,j] = scaler_ema.transform(dataset[vidx,:,j])
+                
     if normalisation_output:
         # Spectrum scalers
         scaler_sp = []
@@ -427,7 +402,7 @@ def preprocess_save_combined(normalisation=True,alpha=0.42,
             scaler_ap.append(preprocessing.StandardScaler())
             apset[train_idx,:,k] = scaler_ap[k].fit_transform(apset[train_idx,:,k])
             apset[val_idx,:,k] = scaler_ap[k].fit_transform(apset[val_idx,:,k])
-
+            
     np.save(save_dir + "/dataset_", dataset)
     np.save(save_dir + "/puref0set_", puref0set)
     np.save(save_dir + "/spset_", spset)
@@ -439,123 +414,4 @@ def preprocess_save_combined(normalisation=True,alpha=0.42,
     joblib.dump(scaler_ap, save_dir + '/scaler_ap_.pkl')
 
 
-def delay_signal(signal,delay):
-    """
-    Wrapper for numpy boilerplate for delaying the signal.
-    The idea is that signal can be delay by shifting and zero padding
-    in the beginning.
-    
-
-    Parameters:
-    -----------
-    signal: The signals are assumed to be tensors of either (Sample X 
-    Time x Channel) or (Sample X Time)
-
-    Returns: 
-    delayed_signal: the delayed signal same shape as signal
-    """
-
-    assert len(signal.shape) < 4, "Invalid signal shape"
-    assert len(signal.shape) < 1, "Invalid signal shape"
-    if len(signal.shape) == 2:
-        delayed_signal = np.pad(signal,
-                                ((0,0),(delay,0)),
-                                mode="constant")[:,:-delay]
-    else:
-        delayed_signal = np.pad(signal,
-                                ((0,0),(delay,0),(0,0)),
-                                mode="constant")[:,:-delay,:]
-    return delayed_signal
-
-def load_test(delay,percentage=1):
-    """
-    Loads the dataset for testing.
-    
-    Parameters:
-    -----------
-    delay: number of delay to use
-    percentage: percentage of the dataset to load. TODO: Does not
-    really make sense for testing, should be deprecated.
-    
-    Returns:
-    --------
-    The test sets as numpy arrays and the scaler objects
-    """
-    
-    dataset = np.load(save_dir + "/dataset_.npy")
-    spset = np.load(save_dir + "/spset_.npy")
-    apset = np.load(save_dir + "/apset_.npy")
-    puref0set = np.load(save_dir + "/puref0set_.npy")
-    scaler_sp = joblib.load(save_dir + '/scaler_sp_.pkl')
-    scaler_ap = joblib.load(save_dir + '/scaler_ap_.pkl')
-    train_idx = np.load(save_dir + "/train_idx_.npy")
-    test_idx = np.load(save_dir + "/val_idx_.npy")
-
-    # Reduce training id size. It is shuffled by default so it is not reshuffled for brevity
-    keep_amount = int(np.ceil(percentage * len(train_idx)))
-    train_idx = train_idx[:keep_amount]
-    
-    ema_test = dataset[test_idx,:,:]
-    puref0_test = delay_signal(puref0set[test_idx,:],delay)
-    sp_test = delay_signal(spset[test_idx,:,:],delay)
-    ap_test = delay_signal(apset[test_idx,:,:],delay)
-
-    return ema_test, sp_test, ap_test,puref0_test, None, scaler_sp, \
-        scaler_ap
-def load_data(delay,percentage=1):
-    """
-    Loads the dataset for testing AND training.
-    
-    Parameters:
-    -----------
-    delay: number of delay to use
-    percentage: percentage of the dataset to load. 
-    
-    Returns:
-    --------
-    The test sets as numpy arrays and the scaler objects
-    """
-    
-    dataset = np.load(save_dir + "/dataset_.npy")
-    spset = np.load(save_dir + "/spset_.npy")
-    apset = np.load(save_dir + "/apset_.npy")
-    scaler_sp = joblib.load(save_dir + '/scaler_sp_.pkl')
-    train_idx = np.load(save_dir + "/train_idx_.npy")
-    test_idx = np.load(save_dir + "/val_idx_.npy")
-
-    # Reduce training id size. It is shuffled by default so it is not reshuffled for brevity
-    keep_amount = int(np.ceil(percentage * len(train_idx)))
-    train_idx = train_idx[:keep_amount]
-    
-    # EMA and LAR partition
-    ema_train = dataset[train_idx,:,:]
-    ema_test = dataset[test_idx,:,:]
-    dataset = None
-    # Padding f0
-    f0_train = None
-    f0_test = None
-    f0set = None
-    
-    sp_train = delay_signal(spset[train_idx,:,:],delay)
-    sp_test = delay_signal(spset[test_idx,:,:],delay)
-    spset = None
-
-    ap_train = delay_signal(apset[train_idx,:,:],delay)
-    ap_test = delay_signal(apset[test_idx,:,:],delay)
-    apset = None
-
-    givenf0_train = None
-    givenf0_test = None
-    givenf0set = None
-
-    return ema_train, ema_test, \
-        None, None, \
-        sp_train, sp_test, \
-        None, None, \
-        None, None, \
-        None, None, scaler_sp, None
-
-#preprocess_save_combined(normalisation=True,alpha=0.42,max_length=1000,
-#                                                                  fs=16000, val_split=0.1,
-#                         noise=False,combined=True)
 

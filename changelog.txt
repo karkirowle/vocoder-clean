@@ -8,6 +8,17 @@ Added encoder-decoder type of fitting called experiment2.py
 Respective model files are added to models
 Restructured some of the directories
 
+---
+Major cleaning
+
+Restructurd the entire code so it is more readable, and all function
+behaviour is better documented
+
+pathology.py - contains the speech pathology function
+data_loader.py - the data loading fuctions are put here
+audio.py - the functions for the audio synthesis are now here
+
+
 
 
 
