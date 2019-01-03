@@ -19,6 +19,9 @@ data_loader.py - the data loading fuctions are put here
 audio.py - the functions for the audio synthesis are now here
 
 
+---
+Batch loading
 
-
-
+Created batch data-preprocessing.
+Needs some additional cleaning, but 10-fold cross-validation finally
+works and can be done with cv.py

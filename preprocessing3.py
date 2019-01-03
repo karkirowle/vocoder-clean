@@ -6,6 +6,7 @@ import sounddevice as sd
 
 import time
 
+from sklearn.model_selection import KFold
 from sklearn import preprocessing
 from sklearn.externals import joblib
 from scipy.signal import decimate,savgol_filter,resample
@@ -163,10 +164,8 @@ def ema_read_mocha(fname):
     return data
 
 
-def train_val_split(files,val_split,k=10):
+def train_val_split(files,val_split, k=10):
     """
-    TODO: Perform 10-fold cross-validation
-
     Partitions the list into training and validation
 
     Parameters:
@@ -182,14 +181,35 @@ def train_val_split(files,val_split,k=10):
     indices = np.arange(total_samples)
     np.random.shuffle(indices)
 
+
     assert val_split < 1 and val_split > 0, \
         "Validation split must be a number on open interval (0,1)"
 
-    validation_size = int(np.ceil(val_split * total_samples))
-    val_idx = indices[:validation_size]
-    train_idx = indices[validation_size:]
+    def chunkIt(seq, num):
+        avg = len(seq) / float(num)
+        out = []
+        last = 0.0
+
+        while last < len(seq):
+            out.append(seq[int(last):int(last + avg)])
+            last += avg
+
+        return out
+
+    p_indices = np.array(chunkIt(indices,k))
+
+    train_idx = []
+    val_idx = []
+
+    for i in range(k):
+        idx_in = [j for j in range(k) if j != i]
+        train_id = p_indices[idx_in]
+        val_id = p_indices[i]
+        train_idx.append(train_id)
+        val_idx.append(val_id)
 
     return train_idx,val_idx
+
 
 def nan_check(dataset):
     """
@@ -270,7 +290,7 @@ def mlpg_postprocessing(mfcc, bins_1, scaler_sp):
 
 def preprocess_save_combined(alpha=0.42,
                              max_length=1000, fs=16000, val_split=0.2,
-                             noise=False,combined=False, bins_1 = 41,
+                             noise=False,combined=True, bins_1 = 41,
                              bins_2 = 1, normalisation_input = True,
                              normalisation_output = True,
                              channel_number = 14,
@@ -311,6 +331,7 @@ def preprocess_save_combined(alpha=0.42,
     total_samples = len(files)
     print("Preprocessing " + str(total_samples) + " samples")
 
+    all_idx = range(total_samples)
     train_idx, val_idx = train_val_split(files,0.2)
 
 
@@ -372,46 +393,43 @@ def preprocess_save_combined(alpha=0.42,
 
         # Normalise the articulographs differently for different references
         cats = ["male", "female", "mngu0"]
-        train_cat_id = {}
-        val_cat_id = {}
         
-        for cat in cats:
-            train_cat_id[cat] = list(set(train_idx).intersection(cat_id[cat]))
-            val_cat_id[cat] = list(set(val_idx).intersection(cat_id[cat]))
-
         # Normalise ema feature wise but do not return normaliser object
         for j in range(channel_number):
             for cat in cats:
                 scaler_ema = preprocessing.StandardScaler()
-                tidx = train_cat_id[cat]
-                vidx = val_cat_id[cat]
+                tidx = cat_id[cat]
                 dataset[tidx,:,j] = scaler_ema.fit_transform(dataset[tidx,:,j])
-                dataset[vidx,:,j] = scaler_ema.transform(dataset[vidx,:,j])
                 
     if normalisation_output:
         # Spectrum scalers
         scaler_sp = []
         for k in range(bins_1):
             scaler_sp.append(preprocessing.StandardScaler())
-            spset[train_idx,:,k] = scaler_sp[k].fit_transform(spset[train_idx,:,k])
-            spset[val_idx,:,k] = scaler_sp[k].transform(spset[val_idx,:,k])
+            spset[all_idx,:,k] = scaler_sp[k].fit_transform(spset[all_idx,:,k])
 
         # Aperiodicities scalers
         scaler_ap = []
         for k in range(bins_2):
             scaler_ap.append(preprocessing.StandardScaler())
-            apset[train_idx,:,k] = scaler_ap[k].fit_transform(apset[train_idx,:,k])
-            apset[val_idx,:,k] = scaler_ap[k].fit_transform(apset[val_idx,:,k])
-            
+            apset[all_idx,:,k] = scaler_ap[k].fit_transform(apset[all_idx,:,k])
+
+    # Saving on a per-indice base
+    for k,fname in tqdm.tqdm(enumerate((files)), total=len(files)):
+        np.save(save_dir + "/dataset_" + str(k), dataset[k,:,:])
+        np.save(save_dir + "/puref0set_" + str(k), puref0set[k,:])
+        np.save(save_dir + "/spset_" + str(k), spset[k,:,:])
+        np.save(save_dir + "/apset_" + str(k), apset[k,:,:])
+
     np.save(save_dir + "/dataset_", dataset)
     np.save(save_dir + "/puref0set_", puref0set)
     np.save(save_dir + "/spset_", spset)
     np.save(save_dir + "/apset_", apset)
+    
     np.save(save_dir + "/train_idx_", train_idx)
     np.save(save_dir + "/val_idx_", val_idx)
 
     joblib.dump(scaler_sp, save_dir + '/scaler_sp_.pkl')
     joblib.dump(scaler_ap, save_dir + '/scaler_ap_.pkl')
-
 
 
