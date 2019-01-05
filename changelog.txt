@@ -25,3 +25,11 @@ Batch loading
 Created batch data-preprocessing.
 Needs some additional cleaning, but 10-fold cross-validation finally
 works and can be done with cv.py
+
+---
+CV error corrected
+
+There was an error in 10-fold CV, which should be now corrected
+Some unit tests are added
+A script looking at the auto-correlation functions are added
+README.md is also upated

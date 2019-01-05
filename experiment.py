@@ -54,28 +54,25 @@ options = {
     "num_features": 15,
     "lr": 0.01, # 0.003 # not assigned in Takuragi paper
     "clip": 5,
-    "epochs": 1, #60
+    "epochs": 100, #60
     "out_features": 82,
     "gru": 128,
     "seed": 10,
-    "noise": 0,
+    "noise": 0.01,
     "delay": 1, # 25 
-    "batch_size": 45, #90
+    "batch_size": 90, #45
     "percentage": 1,
     "k": 0,
     "total_samples": 2274,
-    "save_dir": "processed_comb2_filtered_2"
+    "save_dir": "processed_comb2_filtered_3"
 }
 
 ex.add_config(options)
 
-@ex.main
+@ex.automain
 def my_main(_config,_run):
 
     options = _config
-    total_samples = options["total_samples"]
-    train_size = int(np.ceil(total_samples * 0.8))
-    val_size = total_samples - train_size
     
     # Learning curve storage
     learning_curve = np.zeros((options["epochs"]))
@@ -101,12 +98,13 @@ def my_main(_config,_run):
         train_gen = data_loader.DataGenerator(options,True,True)
         val_gen = data_loader.DataGenerator(options,False,True)
 
+
         model.trainer.fit_generator(generator=train_gen,
                                     validation_data = val_gen,
                                     epochs=options["epochs"],
                                     callbacks=[tb,
-                                              mc,
-                                              LossHistory(_run,learning_curve)])
+                                              mc])
+                                              #LossHistory(_run,learning_curve)])
         
     except KeyboardInterrupt:
         print("Training interrupted")
@@ -118,23 +116,7 @@ def my_main(_config,_run):
 
     options2 = options
     options2["batch_size"] = 227
-    val_gen = data_loader.DataGenerator(options2,False,False)
-    sp_test_hat = model.predict_generator(val_gen)
-    _, sp_test = val_gen.__getitem__(0)
+    MCD_all = proc.evaluate_validation(model,options2,41)
 
-    print(sp_test.shape)
-    scaler_sp = joblib.load(options["save_dir"] + '/scaler_sp_.pkl')
-
-    # Perform MLPG
-    mlpg_generated = proc.mlpg_postprocessing(sp_test_hat,
-                                          41,
-                                          scaler_sp)
-
-    sp_test_u = np.copy(sp_test_hat)
-    for i in range(len(scaler_sp)):
-        sp_test_u[:,:,i] = scaler_sp[i].inverse_transform(sp_test[:,:,i])
-    
-    MCD_all = str(melcd(mlpg_generated,sp_test_u[:,:,:41]))
-
-    print("MCD (dB) (nmkwii)" + MCD_all)
+    print("MCD (dB) (nmkwii)" + str(MCD_all))
     return MCD_all

@@ -16,7 +16,11 @@ import pyworld as pw
 import python_speech_features as psf
 import pysptk as sptk
 from nnmnkwii.preprocessing import interp1d, modspec_smoothing, delta_features
+from nnmnkwii.metrics import melcd
 from nnmnkwii.paramgen import mlpg
+
+# Own stuff
+import data_loader
 
 import tqdm as tqdm
 import pandas as pd
@@ -24,7 +28,7 @@ from scipy.io import wavfile
 
 import glob
 
-        
+import os        
 
 def clean(s):
     """
@@ -172,10 +176,11 @@ def train_val_split(files,val_split, k=10):
     -----------
     files: concatenated list with filenames
     val_split: percentage of validation split
-
+    k: number of folds in CV to make, must be smaller than len(files)
     Returns:
-    train_idx: training ids
-    val_idx: validation ids
+    ---------
+    train_idx: K-elements list of numpy array
+    val_idx: K-element lis of numpy array
     """
     total_samples = len(files)
     indices = np.arange(total_samples)
@@ -184,32 +189,71 @@ def train_val_split(files,val_split, k=10):
 
     assert val_split < 1 and val_split > 0, \
         "Validation split must be a number on open interval (0,1)"
+    assert k < total_samples, \
+        "It is not possible to make more folds than samples"
 
-    def chunkIt(seq, num):
-        avg = len(seq) / float(num)
-        out = []
-        last = 0.0
-
-        while last < len(seq):
-            out.append(seq[int(last):int(last + avg)])
-            last += avg
-
-        return out
-
-    p_indices = np.array(chunkIt(indices,k))
-
+    split_indices = k_split(indices,k)
     train_idx = []
     val_idx = []
 
     for i in range(k):
         idx_in = [j for j in range(k) if j != i]
-        train_id = p_indices[idx_in]
-        val_id = p_indices[i]
+
+        train_id = []
+        
+        for l in idx_in:
+            train_id.append(split_indices[l])
+
+        
+        val_id = split_indices[i]
+
+        train_id = np.array(np.concatenate(train_id))
+        val_id = np.array(val_id)
+
         train_idx.append(train_id)
         val_idx.append(val_id)
 
+
     return train_idx,val_idx
 
+
+def k_split(seq, k):
+    """
+    Partitions a numpy array into k parts
+    
+    Because the parts might be not equal a list of np arrays are returned
+    
+    Parameters:
+    -----------
+    seq - sequence of numbers
+    k - number of parts
+
+    Returns:
+    --------
+    out - list of numpy arrays
+    """
+    
+
+    assert len(seq) > k, \
+        "Seqence has to have more elements than shatters"
+    assert k > 0
+
+    avg = len(seq) / float(k)
+    out = []
+    last = 0.0
+
+    i = 1
+    while last < len(seq):
+        if (i == k):
+            out.append(seq[int(last):])
+            last = len(seq)
+        else:
+            out.append(seq[int(last):int(last + avg)])
+        last += avg
+        i += 1
+    
+
+    return out
 
 def nan_check(dataset):
     """
@@ -288,6 +332,57 @@ def mlpg_postprocessing(mfcc, bins_1, scaler_sp):
     
     return mlpg_generated
 
+def evaluate_validation(model,options,sbin):
+    """
+    Parameters:
+    --------------
+    model - keras model to use for evaluation
+    options["save_dir"] - where to get the normaliser object from
+    options["k"] - which fold to use
+    options["batch_size"] - size of the validation set
+    sbin - cepstral bin size
+    Returns:
+    --------
+    MCD - mel cepstral distortion
+
+
+    """
+
+    # Print full batch
+    val_gen = data_loader.DataGenerator(options,False,False)
+    sp_test_hat = model.predict_generator(val_gen)
+    _, sp_test = val_gen.__getitem__(0)
+
+    scaler_sp = joblib.load(options["save_dir"] + '/scaler_sp_.pkl')
+
+    # Perform MLPG
+    mlpg_generated = mlpg_postprocessing(sp_test_hat,
+                                          sbin,
+                                          scaler_sp)
+
+    sp_test_u = np.copy(sp_test_hat)    
+    for i in range(len(scaler_sp)):
+        sp_test_u[:,:,i] = scaler_sp[i].inverse_transform(sp_test[:,:,i])
+
+    mcd = melcd(mlpg_generated,sp_test_u[:,:,:sbin])
+
+    return mcd
+def f0_process(f0):
+    """
+    Parameters:
+    -----------
+    f0 signal
+
+    Return:
+    -----------
+    the log interpolated f0
+    """
+
+    f0 = interp1d(np.log(f0))
+    
+    return f0
+
+    
 def preprocess_save_combined(alpha=0.42,
                              max_length=1000, fs=16000, val_split=0.2,
                              noise=False,combined=True, bins_1 = 41,
@@ -327,7 +422,6 @@ def preprocess_save_combined(alpha=0.42,
     else:
         files = np.array(glob.glob("dataset2/*.ema"))
     np.random.shuffle(files)
-
     total_samples = len(files)
     print("Preprocessing " + str(total_samples) + " samples")
 
@@ -373,13 +467,14 @@ def preprocess_save_combined(alpha=0.42,
         wav_path = fname_wo_extension + "wav"
         sound_data, fs = sf.read(wav_path)
 
+        
         f0, sp, ap = pw.wav2world(sound_data, fs, 5) # 2
 
         # The general way is to either truncate or zero-pad
         T = f0.shape[0]
         read_in_length = np.minimum(T,max_length)
-        dataset[k,:read_in_length,channel_number] = f0[:read_in_length]
-
+        dataset[k,:read_in_length,channel_number] = f0_process(f0[:read_in_length])
+        dataset[k,:,channel_number] = f0_process(dataset[k,:,channel_number])
         sp_delta = sp_delta_generation(sp,bins_1,alpha,200)
 
         ap = pw.code_aperiodicity(ap, fs)
@@ -395,7 +490,7 @@ def preprocess_save_combined(alpha=0.42,
         cats = ["male", "female", "mngu0"]
         
         # Normalise ema feature wise but do not return normaliser object
-        for j in range(channel_number):
+        for j in range(channel_number + 1):
             for cat in cats:
                 scaler_ema = preprocessing.StandardScaler()
                 tidx = cat_id[cat]
@@ -414,22 +509,22 @@ def preprocess_save_combined(alpha=0.42,
             scaler_ap.append(preprocessing.StandardScaler())
             apset[all_idx,:,k] = scaler_ap[k].fit_transform(apset[all_idx,:,k])
 
-    # Saving on a per-indice base
+    # Create dir
+    if not os.path.isdir(save_dir):
+            os.mkdir(save_dir,0o755)
+    # Savin on a per-indice base
     for k,fname in tqdm.tqdm(enumerate((files)), total=len(files)):
         np.save(save_dir + "/dataset_" + str(k), dataset[k,:,:])
         np.save(save_dir + "/puref0set_" + str(k), puref0set[k,:])
         np.save(save_dir + "/spset_" + str(k), spset[k,:,:])
         np.save(save_dir + "/apset_" + str(k), apset[k,:,:])
 
-    np.save(save_dir + "/dataset_", dataset)
-    np.save(save_dir + "/puref0set_", puref0set)
-    np.save(save_dir + "/spset_", spset)
-    np.save(save_dir + "/apset_", apset)
-    
     np.save(save_dir + "/train_idx_", train_idx)
     np.save(save_dir + "/val_idx_", val_idx)
 
     joblib.dump(scaler_sp, save_dir + '/scaler_sp_.pkl')
     joblib.dump(scaler_ap, save_dir + '/scaler_ap_.pkl')
+
+#preprocess_save_combined(save_dir="processed_comb2_filtered_3")
 
 

@@ -10,15 +10,22 @@ def delay_signal(signal,delay):
 
     Parameters:
     -----------
-    signal: The signals are assumed to be tensors of either (Sample X 
-    Time x Channel) or (Sample X Time)
+    signal: The signal isassumed to be tensors of either
+    - 3D (Sample X Time x Channel)
+    - 2D (Sample X Time)
 
-    Returns: 
+    Returns:
+    --------
     delayed_signal: the delayed signal same shape as signal
     """
 
     assert len(signal.shape) < 4, "Invalid signal shape"
     assert len(signal.shape) > 1, "Invalid signal shape"
+    assert delay >= 0, "Only positive delay could be applied"
+
+    if (delay == 0):
+        return signal
+    
     if len(signal.shape) == 2:
         delayed_signal = np.pad(signal,
                                 ((0,0),(delay,0)),
@@ -162,7 +169,7 @@ class DataGenerator(keras.utils.Sequence):
 
         if (train):
             train_idx = np.load(options["save_dir"] + "/train_idx_.npy")
-            train_idx = np.concatenate(train_idx[self.k])
+            train_idx = train_idx[self.k]
             self.list_IDs = train_idx
             
         else:
@@ -219,6 +226,6 @@ class DataGenerator(keras.utils.Sequence):
             # Store class
             Ytemp = np.load(self.save_dir + "/spset_" + str(ID) + '.npy')
             Y[i,:,:] = Ytemp
-        Y = delay_signal(Y,1)
+        Y = delay_signal(Y,self.delay)
         return X, Y
 
