@@ -4,9 +4,8 @@ Code for reproducing results in ["Paper to be released"](Link of the paper)
 
 ## Requirements
 
- - Tensorflow (tested with v1.8.0)
- - Horovod (tested with v0.13.8) and (Open)MPI
-
+- Requirement A
+- Requirement B
 Run
 ```
 pip install -r requirements.txt
