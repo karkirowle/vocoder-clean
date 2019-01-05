@@ -4,8 +4,9 @@ Code for reproducing results in ["Paper to be released"](Link of the paper)
 
 ## Requirements
 
-- Requirement A
-- Requirement B
+- Python 3.6.7
+- See requirements.txt
+
 Run
 ```
 pip install -r requirements.txt
