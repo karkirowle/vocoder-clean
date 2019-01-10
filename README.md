@@ -14,7 +14,7 @@ pip install -r requirements.txt
 
 Reproduce the cross-validation metric in the paper
 ```
-python preprocessing3.py
+python preprocessing3.py proc
 python cv.py
 ```
 

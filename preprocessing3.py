@@ -29,6 +29,8 @@ from scipy.io import wavfile
 import glob
 
 import os        
+import sys
+
 
 def clean(s):
     """
@@ -389,6 +391,8 @@ def evaluate_validation(model,options,sbin):
     mcd = melcd(mlpg_generated,sp_test_u[:,:,:sbin])
 
     return mcd
+
+
 def f0_process(f0):
     """
     Parameters:
@@ -548,6 +552,5 @@ def preprocess_save_combined(alpha=0.42,
     joblib.dump(scaler_sp, save_dir + '/scaler_sp_.pkl')
     joblib.dump(scaler_ap, save_dir + '/scaler_ap_.pkl')
 
-#preprocess_save_combined(save_dir="processed_comb2_filtered_3")
-
-
+if (sys.argv[1] == "proc"):
+    preprocess_save_combined()
