@@ -154,18 +154,36 @@ class DataGenerator(keras.utils.Sequence):
     Generates data for Keras
     """
     
-    def __init__(self, options, train, shuffle=True):
+    def __init__(self, options, train, shuffle=True,swap=False):
         """
-        Initialization
+        Initialisation
+        -------------
+        The principle that this needs to have access to the concrete
+        files anyway, so it needs to be file-specific.
+        Thus this should be the entry point for the shape inference
+        of the neural network and and it can be fetched via properties
+        
+        TODO: Howver id subselections needs to be accounted for somehow
+
+        Parameters:
+        ------------
+        shuffle - shuffle the IDs
+        swap - swap so that Y is regressed against X
+
         """
-        self.in_channel = options["num_features"]
-        self.out_channel = options["out_features"]
         self.batch_size = options["batch_size"]
         self.delay = options["delay"]
-        self.T = 1000
         self.k = options["k"]
         self.shuffle = shuffle
         self.save_dir = options["save_dir"]
+        self.swap = swap
+
+        # Runtime shape inference
+        Xtemp = np.load(self.save_dir + "/dataset_" + str(1) + '.npy')
+        self.in_channel = Xtemp.shape[1]
+        self.T = Xtemp.shape[0]
+        Ytemp = np.load(self.save_dir + "/spset_" + str(1) + '.npy')
+        self.out_channel = Ytemp.shape[1]
         
         if (train):
             train_idx = np.load(options["save_dir"] + "/train_idx_.npy")
@@ -226,6 +244,12 @@ class DataGenerator(keras.utils.Sequence):
             # Store class - truncate the end if out_channel is less
             Ytemp = np.load(self.save_dir + "/spset_" + str(ID) + '.npy')
             Y[i,:,:] = Ytemp[:,:self.out_channel]
+
         Y = delay_signal(Y,self.delay)
-        return X, Y
+
+
+        if self.swap:
+            return Y,X
+        else:
+            return X, Y
 
