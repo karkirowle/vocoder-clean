@@ -6,7 +6,7 @@ Code for reproducing results in ["Paper to be released"](Link of the paper)
 
 - Python 3.6.7
 - See requirements.txt
-
+- It is required to have GPU-supported installation of Tensorflow
 Run
 ```
 pip install -r requirements.txt
