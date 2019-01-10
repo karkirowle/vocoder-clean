@@ -166,16 +166,16 @@ class DataGenerator(keras.utils.Sequence):
         self.k = options["k"]
         self.shuffle = shuffle
         self.save_dir = options["save_dir"]
-
+        
         if (train):
             train_idx = np.load(options["save_dir"] + "/train_idx_.npy")
             train_idx = train_idx[self.k]
             self.list_IDs = train_idx
-            
         else:
             test_idx = np.load(options["save_dir"] + "/val_idx_.npy")
             test_idx = test_idx[self.k]
             self.list_IDs = test_idx            
+
         self.on_epoch_end()
     def __len__(self):
         """
@@ -223,9 +223,9 @@ class DataGenerator(keras.utils.Sequence):
             Xtemp = np.load(self.save_dir + "/dataset_" + str(ID) + '.npy')
             X[i,:,:] = Xtemp
 
-            # Store class
+            # Store class - truncate the end if out_channel is less
             Ytemp = np.load(self.save_dir + "/spset_" + str(ID) + '.npy')
-            Y[i,:,:] = Ytemp
+            Y[i,:,:] = Ytemp[:,:self.out_channel]
         Y = delay_signal(Y,self.delay)
         return X, Y
 

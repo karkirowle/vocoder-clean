@@ -320,7 +320,7 @@ def mlpg_postprocessing(mfcc, bins_1, scaler_sp):
 
     N = mfcc.shape[0]
     T = mfcc.shape[1]
-    
+
     mlpg_generated = np.zeros((N,T,bins_1))
     
     for i in range(N):
@@ -331,6 +331,28 @@ def mlpg_postprocessing(mfcc, bins_1, scaler_sp):
         mlpg_generated[:,:,i] = scaler_sp[i].inverse_transform(mlpg_generated[:,:,i])
     
     return mlpg_generated
+
+def MLPG_fetch_loss(options):
+    def MLPG_loss(y_true, y_pred):
+        """
+        Parameters:
+        -----------
+        y_true - ground truth static-delta features (N,B,T)
+        y_pred - neural network predicted static-delta features (N,B,T)
+        options - option dicionary containing savedir and bins_1
+        Returns:
+        --------
+        the mean squared error loss between the generated static features
+        """
+        bins_1 = options["bins_1"]
+        save_dir = options["save_dir"]
+
+        scaler_sp = joblib.load(save_dir + '/scaler_sp_.pkl')
+
+        y_true_mlpg = mlpg_postprocessing(y_true,bins_1,scaler_sp)
+        y_pred_mlpg = mlpg_postprocessing(y_pred,bins_1,scaler_sp)
+        return K.mean(K.square(y_pred_mlpg - y_true_mlpg), axis=-1)
+    return MLPG_loss
 
 def evaluate_validation(model,options,sbin):
     """
@@ -519,6 +541,7 @@ def preprocess_save_combined(alpha=0.42,
         np.save(save_dir + "/spset_" + str(k), spset[k,:,:])
         np.save(save_dir + "/apset_" + str(k), apset[k,:,:])
 
+    np.save(save_dir + "/dataset", dataset)
     np.save(save_dir + "/train_idx_", train_idx)
     np.save(save_dir + "/val_idx_", val_idx)
 

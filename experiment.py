@@ -10,7 +10,7 @@ import time
 
 
 from keras.models import load_model
-from models import model_takuragi,model_gru, model_bigru, model_blstm, model_blstm2
+from models import model_takuragi,model_gru, model_bigru, model_blstm, model_blstm2, model_blstm2_cpu
 from keras.callbacks import Callback, EarlyStopping, TensorBoard, ModelCheckpoint
 from keras import optimizers
 
@@ -22,6 +22,8 @@ from sacred import Experiment
 import datetime
 
 from nnmnkwii.metrics import melcd
+
+from schedules import opt_sched
 
 # Fixing the seed for reproducibility
 np.random.seed(2)
@@ -56,11 +58,12 @@ options = {
     "clip": 5,
     "epochs": 100, #60
     "out_features": 82,
+    "bins_1": 41,
     "gru": 128,
     "seed": 10,
-    "noise": 0.01,
+    "noise": 0,
     "delay": 1, # 25 
-    "batch_size": 90, #45
+    "batch_size": 90, #45 # 90 with BLSTM2
     "percentage": 1,
     "k": 0,
     "total_samples": 2274,
@@ -88,11 +91,13 @@ def my_main(_config,_run):
                          ".hdf5",
                          save_best_only=True)
 
-    model = model_blstm2.LSTM_Model(options)    
-
-    rmsprop_optimiser = optimizers.RMSprop(lr=options["lr"],
+    #model = model_blstm2.LSTM_Model(options)
+    model = model_takuragi.GRU_Model(options)
+    #optimiser = opt_sched.taguchi_opt()
+    optimiser = optimizers.RMSprop(lr=options["lr"],
                                            clipvalue=options["clip"])
-    model.trainer.compile(optimizer=rmsprop_optimiser, loss="mse")
+    model.trainer.compile(optimizer=optimiser,
+                          loss="mse")
 
     try:
         train_gen = data_loader.DataGenerator(options,True,True)
@@ -103,7 +108,7 @@ def my_main(_config,_run):
                                     validation_data = val_gen,
                                     epochs=options["epochs"],
                                     callbacks=[tb,
-                                              mc])
+                                               mc])
                                               #LossHistory(_run,learning_curve)])
         
     except KeyboardInterrupt:

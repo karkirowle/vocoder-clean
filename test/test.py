@@ -61,6 +61,19 @@ class TestDataLoader(unittest.TestCase):
         val_gen = data_loader.DataGenerator(options,False,True)
         something, thing = val_gen.__getitem__(0)
         train_gen = data_loader.DataGenerator(options,True,True)
+    def test_data_gen_static(self):
+        options = {}
+        options["batch_size"] = 45
+        options["delay"] = 1
+        options["k"] = 0
+        options["num_features"] = 15
+        options["save_dir"] = "../processed_comb2_filtered_3"
+        options["out_features"] = 41
+        val_gen = data_loader.DataGenerator(options,False,True)
+        something, thing = val_gen.__getitem__(0)
+        print(thing.shape[2])
+        self.assertEqual(thing.shape[2],options["out_features"])
+        train_gen = data_loader.DataGenerator(options,True,True)
 if __name__ == '__main__':
     unittest.main()
     

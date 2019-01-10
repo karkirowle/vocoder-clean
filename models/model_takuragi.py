@@ -1,7 +1,38 @@
 from keras.models import Model
 
 from keras.layers import Input, GaussianNoise, Bidirectional, CuDNNLSTM, TimeDistributed, Dense
+from keras.layers import Activation
+
 from keras_layer_normalization import LayerNormalization
+#from preprocessing3 import mlpg_postprocessing
+from keras.layers import Layer, Dropout, Lambda
+from sklearn.externals import joblib
+import sys
+sys.path.insert(0,'..')
+import preprocessing3 as proc
+
+#class MLPGLayer(Layer):
+#    def __init__(self, output_dim, options, **kwargs):
+#        print("init")
+#        self.output_dim = output_dim
+#        self.options = options
+#        super(MLPGLayer, self).__init__(**kwargs)
+#
+#    def build(self, input_shape):
+#        print("build")
+#        super(MLPGLayer, self).build(input_shape)
+#        
+#    def call(self, inputs):
+#        save_dir = self.options["save_dir"]
+#        scaler_sp = joblib.load(save_dir + '/scaler_sp_.pkl')
+#        print(inputs)
+#        
+#        return proc.mlpg_postprocessing(inputs,self.options,scaler_sp)
+#
+#    def compute_output_shape(self, input_shape):
+#        print("cos")
+#        return (input_shape[0], input_shape[1], self.output_dim)
+
 class GRU_Model(object):
     
     def __init__(self,options):
@@ -9,17 +40,37 @@ class GRU_Model(object):
         inputs = Input(shape=(None,options["num_features"]))
         noise = GaussianNoise(options["noise"])(inputs)
 
-        dense1 = Dense(128,activation="tanh")(noise)
-        dense2 = Dense(128,activation="tanh")(dense1)
-        dense3 = Dense(128,activation="tanh")(dense2)
-        L_Norm = LayerNormalization()(dense3)
-        # GRU layers share number of hidden layer parameter
-        gru_1a = Bidirectional(CuDNNLSTM(options["gru"],
-                                        return_sequences=True))(L_Norm)
-        gru_2a = Bidirectional(CuDNNLSTM(options["gru"],
-                                        return_sequences=True))(gru_1a)
-        # Dense
-        dense = Dense(options["out_features"])(gru_2a)
-        self.trainer = Model(inputs, dense)
+        dense1 = Dropout(0.5)(Dense(128,
+                                    kernel_initializer="lecun_normal")(noise))
+        layernorm1 = Activation("sigmoid")(LayerNormalization()(dense1))
         
+        dense2 = Dropout(0.5)(Dense(128,
+                                    kernel_initializer="lecun_normal")(layernorm1))
+        layernorm2 = Activation("sigmoid")(LayerNormalization()(dense2))
+
+        dense3 = Dropout(0.5)(Dense(128,
+                                    kernel_initializer="lecun_normal")(layernorm2))
+        layernorm3 = Activation("sigmoid")(LayerNormalization()(dense3))
+
+        gru_1a = Dropout(0.5)(Bidirectional(CuDNNLSTM(256,
+                                         kernel_initializer="lecun_normal",
+                                        return_sequences=True))(layernorm3))
+        gru_2a = Dropout(0.5)(Bidirectional(CuDNNLSTM(256,
+                                         kernel_initializer="lecun_normal",
+                                        return_sequences=True))(gru_1a))
+        # Dense
+        dense = Dense(options["out_features"],
+                      kernel_initializer="lecun_normal")(gru_2a)
+
+        bins_1 = options["bins_1"]
+        scaler_sp = joblib.load(options["save_dir"] + '/scaler_sp_.pkl')
+        mlpg_layer = Lambda(lambda mfcc:
+                            proc.mlpg_postprocessing(mfcc,
+                                                        bins_1,
+                                                        scaler_sp))(
+                                                            dense)
+        self.trainer = Model(inputs,mlpg_layer)
     
+#        MLPG_end = MLPGLayer(options["bins_1"],options,name="keksz")(dense)
+
+      #  self.trainer = Model(inputs, MLPG_end)
