@@ -19,6 +19,8 @@ import preprocessing3 as proc
 from sklearn.externals import joblib
 from sacred import Experiment
 
+from schedules import opt_sched, call_shed
+
 import datetime
 
 from nnmnkwii.metrics import melcd
@@ -27,20 +29,6 @@ from schedules import opt_sched
 
 # Fixing the seed for reproducibility
 np.random.seed(2)
-
-class LossHistory(Callback):
-
-    def __init__(self,run,learning_curve):
-        self.run = run
-        self.i = 0
-        self.learning_curve = learning_curve
-        
-    def on_epoch_end(self,batch,logs):
-        self.run.log_scalar("training.loss", logs.get('loss'), self.i)
-        self.run.log_scalar("validation.loss", logs.get('val_loss'), self.i)
-        self.learning_curve[self.i] = logs.get('val_loss')
-        self.i = self.i + 1
-
 
 date_at_start = datetime.datetime.now()
 date_string = date_at_start.strftime("%y-%b-%d-%H-%m")
@@ -51,22 +39,18 @@ ex = Experiment("run_" + date_string)
 
 # General NN training options, specificities modified inside scope
 options = {
-    "experiment" : "reproduction_save_attempt",
-    "max_input_length" : 1000,
-    "num_features": 15,
+    "experiment" : "model_lstm",
     "lr": 0.01, # 0.003 # not assigned in Takuragi paper
     "clip": 5,
     "epochs": 100, #60
-    "out_features": 82,
     "bins_1": 41,
     "gru": 128,
     "seed": 10,
     "noise": 0,
-    "delay": 1, # 25 
+    "delay": 0, # 25 
     "batch_size": 90, #45 # 90 with BLSTM2
-    "percentage": 1,
+    "percentage": 0.5,
     "k": 0,
-    "total_samples": 2274,
     "save_dir": "processed_comb2_filtered_3"
 }
 
@@ -76,52 +60,44 @@ ex.add_config(options)
 def my_main(_config,_run):
 
     options = _config
+
+    swap = False
+    train_gen = data_loader.DataGenerator(options,True,True,swap)
+    val_gen = data_loader.DataGenerator(options,False,True,swap)
+    Y, X = train_gen.__getitem__(1)
+
+    options["num_features"] = train_gen.in_channel
+    options["out_features"] = train_gen.out_channel
     
     # Learning curve storage
     learning_curve = np.zeros((options["epochs"]))
-    
-    tb = TensorBoard(log_dir="logs/" +
-                     date_string +
-                     "_" +
-                     str(options["noise"]))
 
-    
-    mc = ModelCheckpoint("checkpoints/model_sp_comb_lstm_fold_" +
-                         str(options["k"]) +
-                         ".hdf5",
-                         save_best_only=True)
-
-    #model = model_blstm2.LSTM_Model(options)
-    model = model_takuragi.GRU_Model(options)
-    #optimiser = opt_sched.taguchi_opt()
-    optimiser = optimizers.RMSprop(lr=options["lr"],
-                                           clipvalue=options["clip"])
+    model = model_blstm2.LSTM_Model(options)
+    optimiser = optimizers.Adam(lr=options["lr"])
     model.trainer.compile(optimizer=optimiser,
                           loss="mse")
 
-    try:
-        train_gen = data_loader.DataGenerator(options,True,True)
-        val_gen = data_loader.DataGenerator(options,False,True)
+    cb = call_shed.fetch_callbacks(options,_run,learning_curve)
 
+    try:
 
         model.trainer.fit_generator(generator=train_gen,
                                     validation_data = val_gen,
                                     epochs=options["epochs"],
-                                    callbacks=[tb,
-                                               mc])
-                                              #LossHistory(_run,learning_curve)])
+                                    callbacks=cb)
         
     except KeyboardInterrupt:
         print("Training interrupted")
 
-    model = load_model("checkpoints/model_sp_comb_lstm_fold_" +
+    model = load_model("checkpoints/" + options["experiment"] +
                        str(options["k"]) +
                            ".hdf5")
 
-
+    
+    np.save(str(options["percentage"]) + "test",learning_curve)
+    
     options2 = options
     options2["batch_size"] = 227
     MCD_all = proc.evaluate_validation(model,options2,41)
-
     print("MCD (dB) (nmkwii)" + str(MCD_all))
     return MCD_all

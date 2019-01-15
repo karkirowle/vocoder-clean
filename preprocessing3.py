@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
+import seaborn as sns
 import soundfile as sf
 import sounddevice as sd
 
@@ -132,7 +132,6 @@ def ema_read(fname):
                     pass
 
     keep_values = [columns[key] for key in keep_keys]
-
     data = data[:,keep_values]
 
     # Interpolate for nans
@@ -163,10 +162,9 @@ def ema_read_mocha(fname):
            co["tt_y"],co["li_x"],co["li_y"],co["ui_x"],co["ui_y"],
            co["ul_x"],co["ul_y"],co["ll_x"],co["ll_y"]]
     data = data_[:,idx]
-
+    # TODO: remove sav-gol
     for k in range(data.shape[1]):
         data[:,k] = savgol_filter(data[:,k], 51, 3)
-
     return data
 
 
@@ -269,6 +267,38 @@ def nan_check(dataset):
         dataset[np.isnan(dataset)] = 0
         print("Warning! Zeroed a NaN")
 
+def figure_reproduction():
+    """
+    Generates the figures for the paper
+
+    """
+
+    files = np.array(sorted(glob.glob("dataset2/*.ema")))
+    total_samples = len(files)
+    electrodes = 14
+    init_pos = np.zeros((total_samples,electrodes))
+    labels = ["T3", "T2", "T1", "Jaw", "Upper lip", "Lower lip"]
+    for i,fname in enumerate(files):
+        data = ema_read(fname)
+        init_pos[i,:] = data[0,:]
+
+    sns.set_style("white")
+    idx = [0,1,2,3,5,6]
+    markers = [".", "v", "^", "<","<", "s","+"]
+    for label in idx:
+        plt.scatter(init_pos[:,2*label],
+                    init_pos[:,2*label+1],
+                    marker=markers[label],
+                    color="black")
+    plt.xlabel("x position")
+    plt.ylabel("y position")
+    plt.legend(labels)
+    plt.title("Initial position of electrodes in MNGU0 dataset")
+    plt.figure(num=1, figsize=(4.2,4.2), dpi=80, facecolor="w", edgecolor="k")
+    #plt.show()
+    plt.savefig("paper/init_pos.pgf")
+
+    return 0
 def sp_delta_generation(sp,mfcc_bins,alpha,hop_length):
     """
     Takes a sound file and generates the MFCC static and delta 
@@ -365,6 +395,7 @@ def evaluate_validation(model,options,sbin):
     options["k"] - which fold to use
     options["batch_size"] - size of the validation set
     sbin - cepstral bin size
+
     Returns:
     --------
     MCD - mel cepstral distortion
@@ -393,19 +424,31 @@ def evaluate_validation(model,options,sbin):
     return mcd
 
 
-def f0_process(f0):
+def f0_process(f0,linear=True):
     """
+    
     Parameters:
     -----------
     f0 signal
-
+    linear - Linear interpolation for values where np.log(0) = -np.inf
     Return:
     -----------
     the log interpolated f0
     """
 
-    f0 = interp1d(np.log(f0))
-    
+    if (linear):
+        f0 = interp1d(np.log(f0,
+                             out=-np.inf*np.ones_like(f0),
+                             where=(f0!=0)))
+    else:
+        # Calculate running average
+        N = len(f0)
+        print(f0.shape)
+
+        # The beggining is padded with the first element with noise?
+        print(f0.shape)
+        plt.plot(f0)
+        plt.show()
     return f0
 
     
@@ -461,12 +504,12 @@ def preprocess_save_combined(alpha=0.42,
     spset = np.zeros((total_samples,max_length,bins_1 * 2))
     apset = np.zeros((total_samples,max_length,bins_2))
 
-    # Which ID correspond to which dataset, male, female
+    # Which ID correspond to which category/dataset, male, female
     cat_id = { "male": [],
                "female": [],
                "mngu0": []}
 
-    # Append the appropriate id and read files
+    # Append the appropriate id and read files while showing progress
     for k,fname in tqdm.tqdm(enumerate((files)), total=len(files)):
 
         if "mngu0" in fname:
@@ -552,5 +595,16 @@ def preprocess_save_combined(alpha=0.42,
     joblib.dump(scaler_sp, save_dir + '/scaler_sp_.pkl')
     joblib.dump(scaler_ap, save_dir + '/scaler_ap_.pkl')
 
-if (sys.argv[1] == "proc"):
-    preprocess_save_combined()
+if __name__ == "__main__":
+
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--proc", action="store_true")
+    parser.add_argument("--fig", action="store_true")
+
+    args = parser.parse_args()
+
+    if args.proc:
+        preprocess_save_combined()
+    if args.fig:
+       figure_reproduction() 

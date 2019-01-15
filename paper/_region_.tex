@@ -1,0 +1,97 @@
+\message{ !name(template.tex)}\documentclass[a4paper]{article}
+
+\usepackage{INTERSPEECH2018}
+\usepackage{tikz}
+
+\usetikzlibrary{shapes,arrows,positioning}
+
+\tikzstyle{block} = [draw, fill=white, rectangle, 
+    minimum height=3em, minimum width=6em]
+\tikzstyle{sum} = [draw, fill=white, circle, node distance=1cm]
+\tikzstyle{input} = [coordinate]
+\tikzstyle{output} = [coordinate]
+\tikzstyle{pinstyle} = [pin edge={to-,thin,black}]
+
+\title{Multi-speaker articulatory-to-acoustic speech synthesis with
+deep neural networks}
+\name{Bence Halpern$^1$$^2$, Co-author Name$^2$}
+%The maximum number of authors in the author list is twenty. If the number of contributing authors is more than twenty, they should be listed in a footnote or in acknowledgement section, as appropriate.
+\address{
+  $^1$Netherlands Cancer Institute\\
+  $^2$University of Amsterdam\\
+  $^2$Co-author Affiliation}
+\email{b.halpern@nki.nl, coauthor@company.com}
+
+\begin{document}
+
+\message{ !name(template.tex) !offset(184) }
+\section{Experiment}
+
+\subsection{Neural network experiments}
+
+Three recurrent neural networks architectures were trained based on previous
+papers tackling similiar problems.
+
+Based on (TODO: Ref), a bidirectional LSTM was trained with four layers.
+The final layer was a fully connected layer matching the output dimensions.
+This neural network was trained using stochastic gradient descent and
+a learning rate of \( \alpha = 0.01 \).
+ii
+The ypublication of \cite{Taguchi} used a neural networks with...
+This neural network was trained using RMSProp, with a learning rate of 0.01.
+
+For training the mean squared error loss function was used, and for
+evaluation the Mel cepstral distortion (MCD) have been employed. (TODO: ref)
+
+
+Ten fold cross-validation was performed to estimate the out-ouf-sample
+generalisation capability of the neural networks.
+
+\subsection{Pathological speech synthesis}
+
+Pathological speech synthesis is performed by considering the articulatory
+space and taking knowledge about the change of articulation.
+
+In tongue cancer, articulation of the tongue is impeded. In practice,
+it is found that teaching patients to speak at a slower rate helps these
+articulation problems. Thus, it is hypothesised that is the maximum
+velocity of the tongue that is limited in pathological speech.
+
+A pathological speech transformation could then be constructed for
+a discretet time signal by first taking the discrete time difference,
+
+\begin{equation}
+  d[t] = x[t] - x[t-1],
+  \label{eq1}
+\end{equation}
+
+where \( x[t] \in \mathbb{R}^T \) is a signal for one particular electrode channel.
+
+The difference signal then can be thresholded using,
+
+\begin{equation}
+  d_p[t] = \text{min}(d[t],c) \quad \text{for} \quad d[t] \geq 0, 
+  \label{eq2}
+\end{equation}
+\begin{equation}
+  d_p[t] = \text{min}(d[t],-c) \quad \text{for} \quad d[t] < 0,
+  \label{eq3}
+\end{equation}
+
+where \( c \in \mathbb{R}^{+} \) is a positive number representing an
+arbitrary threshold.
+
+After obtaining this signal a cumulative sum could be performed to obtain
+the pathological EMA signal
+\begin{equation}
+  p[t] = \sum_{i=0}^{t} x[i].
+  \label{eq4}
+\end{equation}
+
+This signal then could be fed through a feedforward run of a neural network
+to synthetise pathological speech.
+
+
+\message{ !name(template.tex) !offset(234) }
+
+\end{document}

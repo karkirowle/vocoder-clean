@@ -167,6 +167,12 @@ class DataGenerator(keras.utils.Sequence):
 
         Parameters:
         ------------
+
+        options: Dictionary
+        batch_size -
+        delay - See delay_signal
+        k - which fold to use
+        percentage - amount of training data to use
         shuffle - shuffle the IDs
         swap - swap so that Y is regressed against X
 
@@ -176,8 +182,9 @@ class DataGenerator(keras.utils.Sequence):
         self.k = options["k"]
         self.shuffle = shuffle
         self.save_dir = options["save_dir"]
+        self.percentage = options["percentage"]
+        
         self.swap = swap
-
         # Runtime shape inference
         Xtemp = np.load(self.save_dir + "/dataset_" + str(1) + '.npy')
         self.in_channel = Xtemp.shape[1]
@@ -188,6 +195,11 @@ class DataGenerator(keras.utils.Sequence):
         if (train):
             train_idx = np.load(options["save_dir"] + "/train_idx_.npy")
             train_idx = train_idx[self.k]
+            
+            size_to_use = int(np.ceil(len(train_idx) * self.percentage))
+            print(size_to_use)
+            train_idx = train_idx[:size_to_use]
+            
             self.list_IDs = train_idx
         else:
             test_idx = np.load(options["save_dir"] + "/val_idx_.npy")
