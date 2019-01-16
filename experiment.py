@@ -28,7 +28,6 @@ from nnmnkwii.metrics import melcd
 from schedules import opt_sched
 
 # Fixing the seed for reproducibility
-np.random.seed(2)
 
 date_at_start = datetime.datetime.now()
 date_string = date_at_start.strftime("%y-%b-%d-%H-%m")
@@ -53,6 +52,8 @@ options = {
     "k": 0,
     "save_dir": "processed_comb2_filtered_3"
 }
+
+np.random.seed(options["seed"])
 
 ex.add_config(options)
 
@@ -94,7 +95,10 @@ def my_main(_config,_run):
                            ".hdf5")
 
     
-    np.save(str(options["percentage"]) + "test",learning_curve)
+    np.save(str(options["percentage"]) +
+            "seed" +
+            str(options["seed"]) +
+            "test" ,learning_curve)
     
     options2 = options
     options2["batch_size"] = 227

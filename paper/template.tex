@@ -39,8 +39,8 @@ Understading how articulation affects speech is a central question in speech
 research. The source-filter model was one of the first models to tackle this
 problem by noting that speech production could be described by
 the geometry of the vocal tract and the glottal wave. Mathematically,
-the model synthetises speech by exciting an autoregressive (AR) model with a
-discrete time signal, where the AR coefficients capture the geometry of the
+the source-filter model synthetises speech by exciting an autoregressive (AR) model with a
+signal, where the AR coefficients capture the geometry of the
 vocal tract, which is also represented by an area function \cite{Benesty2009}. 
 
 \begin{figure}[t]
@@ -78,27 +78,29 @@ called electromagnetic articulography to obtain articulation data
 \cite{Aryal2016} \cite{Taguchi} \cite{Liu2018} along with recurrent
 neural networks, which are neural networks that are able to deal with
 the sequential nature of data. Data-driven methods became of interest also
-real-time speech synthesis. The efficacy of real-time speech synthesis
+in real-time speech synthesis. The efficacy of real-time speech synthesis
 has been investigated using a tool called permanent magnetic articulography
 by Gonzalez et al \cite{Gonzalez2017}, which gave understandable
 speech.
 
 The conclusion of these endeavours were that while it is possible to
-predict some of the pitch from articulation, the quality of the speech
-suffers. It was also possible to obtain satisfactory values for the
+predict some of the pitch from articulation, the quality suffers.
+It is, however, possible to obtain satisfactory values for the
 spectral quality.
 
 In the author's broader research, the aim is to demonstrate how pathologies in
-articulation are translated to speech. This of interest in many types
-of pathological speech where the laryngeal functions remains intact, or
-the deviations in the laryngeal function are known. This way accomodating
-the articulatory changes to a model is able to aid understanding of
-the pitch of the voice which has no pathological deviations.
+articulation are translated to speech. In some types of pathological
+speech the laryngeal function remains intact, meaning the \( F_0 \)
+remains unchanged. This means, by knowing the original pitch and the
+pathological deviations in articulation, it should be possible to
+synthetise pathological speech.
 
-Furthermore, based on the principles of the source-filter model,
-it is then desirable to construct a data-driven method for
-multi-speaker articulatory synthesis, which separates the source infomation
-(excitation and articulation) from the effect (speech). 
+Furthermore, based on the principles of the source-filter model, neural
+network based speech synthesis should then have the \( F_0 \) on the
+input side of the model, rather than as a predicted value. This separates
+source information (excitation and articulation) from the effect (speech)
+and the neural network can then be looked as a function approximator
+for a dynamic area function.
 
 The main contributions of this paper are,
 \begin{itemize}
@@ -113,16 +115,18 @@ Our code is also available as a Github repository on the link
 \section{Method}
 \subsection{Electromagnetic articulography}
 
-Electromagnetic articulography uses sensor coils which are placed on the
-different articulators in the vocal tract. Using this technology it
-is possible to record the displacement of the articulators which can then
-be used to approximate the dynamic area function with a neural network.
+Electromagnetic articulography (EMA) is a measurement technology which uses
+sensor coils which are placed on the different articulators in the vocal tract.
+Using this technology it is possible to record the displacement of the articulators
+which can then be used to predict speech which is simultaneously recorded.
 
-The electrodes are placed on the MNGU0 and MOCHA-TIMIT dataset on a total
-of seven positions.
+The electrodes are placed on the MNGU0 \cite{Richmond2011} and MOCHA-TIMIT dataset on a total
+of seven positions. The two datasets have not recorded entire the
+same channels, so Table \ref{tab:electrodes} include the alignment
+that has been used.
 \begin{table}[th]
+  \label{tab:electrodes}
   \caption{Articulatory information recorded in datasets}
-  \label{tab:example}
   \centering
   \begin{tabular}{ r r }
     \toprule
@@ -136,12 +140,11 @@ of seven positions.
     Upper lip & Upper lip \\
     Lower lip & Lower lip \\
     \bottomrule
-  \end{tabular}
-  
+    \end{tabular}
 \end{table}
 
 TODO: Decide whether you want to leave out the lower incisor or jaw
-ii
+
 \begin{figure}[t]
   \begin{center}
     \scalebox{0.50}{\input{init_pos.pgf}}
@@ -152,28 +155,24 @@ ii
 \subsection{Dataset}
 
 The MNGU0 and the MOCHA-TIMIT dataset were used to obtain a total of
-X samples, which were partitioned to training-validation set. The
-combined dataset has 2274 speech recordings and electromagnetic articulography
-data pairs. The dataset contains data from three speakers, two British
-male and one British female.
-
-\subsection{Preprocessing}
+2274 samples, which were partitioned to training and validation set when
+no hyperparameter optimisation was done. An additional test set was used
+in case of hyperparameter optimisation. The dataset contains data from
+three speakers, two British male and one British female. The recordings
+from the microphones were 16kHz.
 
 \subsection{Sampling}
 
 It is important that the input and output sample rates of the different
 datasets are matched, because otherwise, the input-output pairs contain
-different amount of information.
+different amounts of information.  
 
 The sampling frequency of the original EMA signals were 500 Hz, however
 the MNGU0 was provided to us downsampled to 200 Hz. To match this frequency,
-the sampling frequency of the MOCHA-TIMIT were also downsampled.
+the sampling frequency of the MOCHA-TIMIT were also downsampled to 200 Hz.
 
-For the MNGU0 dataset, NaN values were of EMA occured, this was interpolated
-linearly.
-
-For the MOCHA-TIMIT dataset, a Savitzky-Golay filter was used to ...
-(TODO: Savgol filter?)
+For the MNGU0 dataset, NaN values occured when the measurement precision
+was lose. These values were simply interpolated linearly.
 
 To ease training, the input signals were either truncated or padded
 so there were a total of \( T = 1000 \) samples for each training example.
@@ -182,30 +181,31 @@ silence, so it is padded with the last element.
 
 \subsection{Vocoder analysis}
 
-The speech was transformed with the PyWORLD vocoder \cite{Morise2016}
+Vocoder features were extracted with the PyWORLD vocoder \cite{Morise2016}
 and compressed with the PySPTK toolkit available at \url{http://github.com/r9y9/pysptk}.
-The period between consecutive frames was 5 miliseconds. The resulting 40 MFCC and 1 power parameters
-were used to generatic static and delta parameters, resulting in 82 parameters
-for the training. As the first step of the MFCC processsing \( \alpha
+The period between consecutive frames were 5 miliseconds. The resulting 40 MFCC
+and 1 power parameters were used to generatic static and delta parameters,
+resulting in 82 parameters for the training. As the first step of the MFCC extraction \( \alpha
 = 0.42 \) were used a pre-emphasis coefficient. The PyWORLD vocoder
 also provides the $ F_0 $ and BAP values for synthesis, these were
-explicitly given for the synthesis.
+explicitly given for the synthesis, due to the reasons stated in the
+Introduction.
 
-\subsection{Delay and interpolation}
+\subsection{Delay}
 Previously \cite{Gonzalez2016}, the effect of delay on the
 output signal were investigated. While it has been found that delay
 is beneficial, the author's choice of function approximators are
 restricted to acausal models, so it has been decided
 not to use delay in our final implementation.
 
-\subsection{Fundamental frequency}
+\subsection{Fundamental frequency interpolation}
 
 Previously, it has been found beneficial to take the logarithm of the
-pitch and linearly interpolate. \cite{Gonzalez2017} An alternative method also exists with
-exponential interpolation which is described in \cite{Chen1997}.
-It has been decided that the linear interpolation technique will be used.
-This makes the \( F_0 \) continous, which is important property to have
-when it is regressed in a function approximation setting.
+pitch to obtain a continous \( F_0 \) curve.
+When the logarithm is not defined, linear  interpolatation has been done. \cite{Gonzalez2017}
+An alternative method also exists with exponential interpolation
+which is described in \cite{Chen1997}. It has been decided that the
+linear interpolation technique will be used. 
 
 \subsection{Normalisation}
 
@@ -227,45 +227,53 @@ A LSTM is governed by the following equations,
 
 \begin{equation}
   \mathbf{i}_{t} = \sigma ( \mathbf{W}_{xi} \mathbf{x}_{t} + \mathbf{W}_{hi}
-  \mathbf{h}_{t-1} + \mathbf{W}_{ci} \mathbf{c}_{t-1} + \mathbf{b}_{i})  
+  \mathbf{h}_{t-1} + \mathbf{W}_{ci} \mathbf{c}_{t-1} + \mathbf{b}_{i}),  
 \end{equation}
 \begin{equation}
   \mathbf{f}_{t} = \sigma ( \mathbf{W}_{xf} \mathbf{x}_{t} + \mathbf{W}_{hf}
-  \mathbf{h}_{t-1} + \mathbf{W}_{cf} \mathbf{c}_{t-1} + \mathbf{b}_{f})  
+  \mathbf{h}_{t-1} + \mathbf{W}_{cf} \mathbf{c}_{t-1} + \mathbf{b}_{f}), 
 \end{equation}
 \begin{equation}
   \mathbf{c}_{t} = \mathbf{f} \mathbf{c}_{t-1} + \mathbf{i}_{t} \text{tanh} ( \mathbf{W}_{hc}
-  \mathbf{h}_{t-1} + \mathbf{b}_c)
+  \mathbf{h}_{t-1} + \mathbf{b}_c),
 \end{equation}
 \begin{equation}
   \mathbf{o}_{t} = \sigma ( \mathbf{W}_{x0}\mathbf{x}_t + \mathbf{W}_{ho} \mathbf{h}_{t-1}
-  + \mathbf{W}_{co}\mathbf{c}_{t} + \mathbf{b}_0 )
+  + \mathbf{W}_{co}\mathbf{c}_{t} + \mathbf{b}_0 ),
 \end{equation}
 \begin{equation}
-  \mathbf{h}_t = \mathbf{o}_{t} \text{tanh} ( \mathbf{c}_t )
+  \mathbf{h}_t = \mathbf{o}_{t} \text{tanh} ( \mathbf{c}_t ).
   \end{equation}
+
+The exact architectures are described in the Section \ref{nnexperiment}.
 
 \subsection{Synthesis}
 
-A slighlty different method were undertaken for synthesis. It might
-seem unconventional, that we don't predidict BAP and $ F_0 $, but $ F_0 $
-is directly related to laryngeal function, so it is at the input side
-of the actual speech synthesis.
+Synthesis for the validation set is performed using the ground truth
+parameters for the BAP and $ F_0 $ and only the spectral prediction is
+benchmarked.
 
 \section{Experiment}
 
-\subsection{Neural network experiments}
+\subsection{Neural network experiments} \label{nnexperiment}
 
 Three recurrent neural networks architectures were trained based on previous
 papers tackling similiar problems.
-aa
+
 Based on \cite{Liu2018}, a bidirectional LSTM was trained with four layers.
 The final layer was a fully connected layer matching the output dimensions.
 This neural network was trained using stochastic gradient descent and
 a learning rate of \( \alpha = 0.01 \).
-ii
-The ypublication of \cite{Taguchi} used a neural networks with...
-This neural network was trained using RMSProp, with a learning rate of 0.01.
+
+Anotherpublication \cite{Taguchi} used a neural networks with three fully
+connected layers with 128 hidden units, each layer has a linear activation
+function, which is followed by Layer Normalisation and a sigmoid activation
+function. This is followed by two BLSTM layers with 256 hidden units. Finally,
+a fully connected layer is used. This neural network was trained using Grave's RMSProp (TODO: ref),
+with a learning rate of \( \alpha = 0.01 \) .
+
+Finally, another BLSTM was trained based on the architecture of
+\cite{Liu2018}, but using Adam as an optimiser \cite{Kingma2015}.
 
 \begin{table}[th]
   \caption{Comparison of different trainng methods}
@@ -277,7 +285,7 @@ This neural network was trained using RMSProp, with a learning rate of 0.01.
     \midrule
     Liu 2018 & SGD & 0.01 \\
     Taguchi 2018 & RMSProp & 0.01       \\
-    Gonzalez 2017 & SGD (?) & 0.01               \\
+    Modified Liu & Adam & 0.01               \\
     \bottomrule
   \end{tabular}
   
@@ -285,8 +293,6 @@ This neural network was trained using RMSProp, with a learning rate of 0.01.
 
 For training the mean squared error loss function was used, and for
 evaluation the Mel cepstral distortion (MCD) have been employed. \cite{Kubichek1993}
-
-
 
 Ten fold cross-validation was performed to estimate the out-ouf-sample
 generalisation capability of the neural networks.
@@ -336,6 +342,8 @@ This signal then could be fed through a feedforward run of a neural network
 to synthetise pathological speech.
 
 \section{Results and discussion}
+
+\subsection{Benchmark results}
 \begin{table}[th]
   \caption{Comparison of 10-fold CV performance of neural networks}
   \label{tab:example}
@@ -346,7 +354,7 @@ to synthetise pathological speech.
     \midrule
     Liu 2018 & 5.8 dB \\
     Taguchi 2018 & 6.2 dB               \\
-    Gonzalez 2017 & 6 dB               \\
+    Modifed Liu & 6 dB               \\
     \bottomrule
   \end{tabular}
   
@@ -356,10 +364,72 @@ It is important to note that the original networks were trained on
 single speakers, that is why the MCD values are higher than in the
 original publications.
 
+
+\subsection{Learning curves}
+
+The training set was increased from ten percent of it's total size to it's
+total size in increments of ten percents, and the mean squared error
+was calculated at all epochs of training for the validation set, which
+can be seen on Figure \ref{learning_curve}.
+
+\begin{figure}[t]
+  \begin{center}
+    \scalebox{0.50}{\input{retraining.pgf}}
+    \caption{Partial data retraining shows that adding more data would
+      decrease loss}
+      \label{learning_curve}
+\end{center}
+\end{figure}
+
+
+After that, a paired t-test was performed to answer whether there is
+a statistically significant improvement with each addition of the training data.
+It has been found that for each addition, the paired t-test resulted in statistically
+significant results, which indicates that it is very likely that addition
+of more data improves the model.
+
+To estimate how much data would be needed to achieve a ''perfect'' performance,
+assuming a linear fit, the mean of the validation loss in last 5 epochs
+were taken and regressed againts the amount of training data included in
+number of samples. This fit can be seen on Figure \ref{retraining_linear}.
+Taking the ratio of the slope and the intercept, approximately 8382
+training data point would be needed.
+
+Again, note that there are several limitations of this assumption. First, the
+relationship is most likely not linear. Secondly, given any noise, achieving
+zero loss is impossible. However, these benchmarks still have merit in
+future experiment design.
+
+\begin{figure}[t]
+  \begin{center}
+    \scalebox{0.50}{\input{retraining_linear.pgf}}
+    \caption{Partial data retraining shows that adding more data would
+      decrease loss. }
+    \label{retraining_linear}
+\end{center}
+\end{figure}
+
+
+\subsection{Pathological speech examples}
+
+The pathological speech examples can be listened on the webpage of the
+author, see \url{http://karkirowle.github.io/paper1}. 
+
+\section{Conclusion}
+
+This paper is a proof of concept that it is possible to make pathological
+speech by incorporating changes in an articulatory domain. Benchmarks
+have been also established and an open source repository is also available
+in order to reproduce these results. Using cross-validation as the
+training data increases, bounds have been established on the expected
+amount of data needed for the model to improve.
+
 It can be concluded that it is possible to make satisfactory quality
 speech synthesis, and it is possible to present some lisping pathologies.
 
-\section{Conclusion}
+In future work, changes in articulation during oral cancer will be
+investigated using oral cancer to use empirical data for speech synthesis
+instead of physical considerations.
 
 \section{Acknowledgements}
 This project has received funding from the European Union's Horizon

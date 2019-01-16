@@ -9,19 +9,12 @@ sns.set()
 
 # Loading data
 
-
-files = glob.glob('*_test')
-
-print(files)
-
-curves = len(files)
-
+idx = [1,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1]
+curves = len(idx)
 data = np.zeros((100,curves))
 
-for i,file in enumerate(files):
-    print(file)
-    data[:,i] = np.loadtxt(file)
-
+for i,id in enumerate(idx):
+    data[:,i] = np.load("copy/" + str(id) + "test.npy")
 
 
 
@@ -33,11 +26,35 @@ for i in range(curves - 1):
     print ("Paired t-test p-level for learning curve",str(i),
            str(i+1),"is",str(pvalue))
 
-print(data.T)
+sns.set_style("white")
 
-plt.plot(data)
+plt.plot(data[:,0], color="black", marker="+")
+plt.plot(data[:,5], color="black", marker=".")
+plt.plot(data[:,9], color="black", marker="^")
+
 plt.xlim([0,40])
 plt.xlabel("Epochs")
-plt.ylabel("RMSE on validation set")
-plt.title("Adding data significantly helps generalisation")
+plt.ylabel("Validation loss")
+plt.legend(["Full training set", "50% of training set", "10% of training set"])
+plt.title("Learning curves show that adding data help generalisation")
+plt.figure(num=1, figsize=(4.2,4.2), dpi=80, facecolor="w", edgecolor="k")
 plt.show()
+
+# We take the mean of the last five epochs
+from scipy import stats
+
+datapoints = np.array(idx) * 2274
+print(datapoints)
+epoch_means = np.mean(data[-5:,:],axis=0)
+slope, intercept, r_value, p_value, std_error = stats.linregress(datapoints,epoch_means)
+
+x = np.linspace(0,2800,6000)
+y = slope * x + intercept
+
+print(-intercept/slope)
+plt.plot(x,y,color="black")
+plt.scatter(datapoints, epoch_means, color="black")
+plt.xlabel("Total number of training data points")
+plt.ylabel("Validation loss")
+plt.title("Adding data helps generalisation")
+plt.savefig("../../paper/retraining_linear.pgf")

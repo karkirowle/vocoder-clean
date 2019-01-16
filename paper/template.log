@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2018.10.12)  14 JAN 2019 17:44
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2018.10.12)  16 JAN 2019 11:54
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -643,9 +643,6 @@ File: tikzlibrarypositioning.code.tex 2008/10/06 v3.0.1a (rcs-revision 1.7)
 
 LaTeX Warning: Label `tab:example' multiply defined.
 
-
-LaTeX Warning: Label `tab:example' multiply defined.
-
 )
 \openout1 = `template.aux'.
 
@@ -766,21 +763,32 @@ File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
 )
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <9> not available
 (Font)              Font shape `OT1/ptm/b/n' tried instead on input line 30.
-LaTeX Font Info:    Try loading font information for TS1+ptm on input line 103.
+LaTeX Font Info:    Try loading font information for TS1+ptm on input line 107.
 
 
 (/usr/share/texlive/texmf-dist/tex/latex/psnfss/ts1ptm.fd
 File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
 )
-Underfull \hbox (badness 4366) in paragraph at lines 108--110
+Underfull \hbox (badness 4366) in paragraph at lines 112--114
 []\OT1/ptm/m/n/9 Our code is also avail-able as a Github repos-i-tory
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 108--110
+Underfull \hbox (badness 10000) in paragraph at lines 112--114
 \OT1/ptm/m/n/9 on the link $\OT1/pcr/m/n/9 https : / / github . com / karkirowl
 e /
  []
+
+
+LaTeX Warning: Citation `Richmond2011' on page 1 undefined on input line 123.
+
+
+Package caption Warning: \label without proper reference on input line 128.
+See the caption package documentation for explanation.
+
+
+LaTeX Warning: Reference `tab:electrodes' on page 1 undefined on input line 125
+.
 
 (./init_pos.pgf
 LaTeX Font Info:    Try loading font information for OT1+phv on input line 64.
@@ -800,7 +808,7 @@ Missing character: There is no â in font phvr7t!
 Missing character: There is no ˆ in font phvr7t!
 Missing character: There is no ’ in font phvr7t!
 )
-Overfull \hbox (3.64174pt too wide) in paragraph at lines 145--147
+Overfull \hbox (3.64174pt too wide) in paragraph at lines 150--152
  [] 
  []
 
@@ -808,18 +816,38 @@ Overfull \hbox (3.64174pt too wide) in paragraph at lines 145--147
 
 
 
-] [2] (./template.bbl)
-[3] (./template.aux)
+] [2]
+
+LaTeX Warning: Citation `Kingma2015' on page 3 undefined on input line 276.
+
+(./retraining.pgf)
+Overfull \hbox (3.64174pt too wide) in paragraph at lines 377--379
+ [] 
+ []
+
+(./retraining_linear.pgf)
+Overfull \hbox (3.64174pt too wide) in paragraph at lines 405--407
+ [] 
+ []
+
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [3]
+(./template.bbl) [4] (./template.aux)
+
+LaTeX Warning: There were undefined references.
+
 
 LaTeX Warning: There were multiply-defined labels.
 
  ) 
 Here is how much of TeX's memory you used:
- 16896 strings out of 492982
- 348236 string characters out of 6134895
- 2755757 words of memory out of 5000000
- 20087 multiletter control sequences out of 15000+600000
- 35735 words of font info for 84 fonts, out of 8000000 for 9000
+ 16911 strings out of 492982
+ 348454 string characters out of 6134895
+ 2757196 words of memory out of 5000000
+ 20095 multiletter control sequences out of 15000+600000
+ 37495 words of font info for 86 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  55i,10n,67p,412b,780s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/share/texliv
@@ -838,10 +866,10 @@ live/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></usr/share/texlive/texmf-di
 st/fonts/type1/urw/helvetic/uhvr8a.pfb></usr/share/texlive/texmf-dist/fonts/typ
 e1/urw/times/utmb8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/ut
 mr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on template.pdf (3 pages, 378354 bytes).
+Output written on template.pdf (4 pages, 389687 bytes).
 PDF statistics:
- 86 PDF objects out of 1000 (max. 8388607)
- 63 compressed objects within 1 object stream
+ 89 PDF objects out of 1000 (max. 8388607)
+ 65 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  13 words of extra memory for PDF output out of 10000 (max. 10000000)
 

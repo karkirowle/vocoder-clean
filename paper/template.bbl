@@ -59,6 +59,12 @@ J.~A. Gonzalez, L.~A. Cheah, P.~D. Green, J.~M. Gilbert, S.~R. Ell, R.~K.
   Communication Association, INTERSPEECH}, vol. 2017-Augus, pp. 3986--3990,
   2017.
 
+\bibitem{Richmond2011}
+K.~Richmond, P.~Hoole, and S.~King, ``{Announcing the electromagnetic
+  articulography (day 1) subset of the mngu0 articulatory corpus},'' in
+  \emph{Proceedings of the Annual Conference of the International Speech
+  Communication Association, INTERSPEECH}, 2011.
+
 \bibitem{Morise2016}
 M.~Morise, F.~Yokomori, and K.~Ozawa, ``{WORLD: A vocoder-based high-quality
   speech synthesis system for real-time applications},'' \emph{IEICE
@@ -78,6 +84,11 @@ C.~J. Chen, R.~A. Gopinath, M.~D. Monkowski, M.~A. Picheny, and K.~Shen, ``{New
 \bibitem{Hochreiter1997}
 S.~Hochreiter and J.~Schmidhuber, ``{Long Short-Term Memory},'' \emph{Neural
   Computation}, 1997.
+
+\bibitem{Kingma2015}
+D.~P. Kingma and J.~L. Ba, ``{Adam: A method for stochastic gradient
+  descent},'' \emph{ICLR: International Conference on Learning
+  Representations}, 2015.
 
 \bibitem{Kubichek1993}
 R.~F. Kubichek, ``{Mel-cepstral Distance Measure for Objective Speech Quality

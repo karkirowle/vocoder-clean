@@ -16,45 +16,45 @@ Warning--empty journal in Taguchi
 Warning--empty year in Taguchi
 
 Done.
-You've used 10 entries,
+You've used 12 entries,
             4039 wiz_defined-function locations,
-            880 strings with 9587 characters,
-and the built_in function-call counts, 6661 in all, are:
-= -- 529
-> -- 187
+            891 strings with 9923 characters,
+and the built_in function-call counts, 7542 in all, are:
+= -- 594
+> -- 209
 < -- 44
-+ -- 98
-- -- 36
-* -- 341
-:= -- 1064
-add.period$ -- 19
-call.type$ -- 10
-change.case$ -- 9
++ -- 108
+- -- 41
+* -- 379
+:= -- 1212
+add.period$ -- 23
+call.type$ -- 12
+change.case$ -- 11
 chr.to.int$ -- 102
-cite$ -- 13
-duplicate$ -- 482
-empty$ -- 510
-format.name$ -- 45
-if$ -- 1479
+cite$ -- 15
+duplicate$ -- 560
+empty$ -- 605
+format.name$ -- 52
+if$ -- 1678
 int.to.chr$ -- 0
-int.to.str$ -- 10
-missing$ -- 86
-newline$ -- 61
-num.names$ -- 10
-pop$ -- 213
+int.to.str$ -- 12
+missing$ -- 101
+newline$ -- 67
+num.names$ -- 12
+pop$ -- 256
 preamble$ -- 1
 purify$ -- 0
 quote$ -- 2
-skip$ -- 506
+skip$ -- 577
 stack$ -- 0
-substring$ -- 247
-swap$ -- 370
+substring$ -- 249
+swap$ -- 411
 text.length$ -- 10
 text.prefix$ -- 0
 top$ -- 5
-type$ -- 10
+type$ -- 12
 warning$ -- 3
-while$ -- 26
-width$ -- 12
-write$ -- 121
+while$ -- 28
+width$ -- 14
+write$ -- 137
 (There were 3 warnings)
