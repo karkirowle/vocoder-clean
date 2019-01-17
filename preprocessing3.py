@@ -459,7 +459,7 @@ def preprocess_save_combined(alpha=0.42,
                              normalisation_output = True,
                              channel_number = 14,
                              factor = 80,
-                             save_dir = "processed_comb2_filtered_2"):
+                             save_dir = "processed_comb_test"):
     """
     The main entry point to the preprocessing pipeline
 
@@ -495,8 +495,10 @@ def preprocess_save_combined(alpha=0.42,
     print("Preprocessing " + str(total_samples) + " samples")
 
     all_idx = range(total_samples)
-    train_idx, val_idx = train_val_split(files,0.2)
 
+    # Last hundred is for testing
+    files2 = files[:100]
+    train_idx, val_idx = train_val_split(files2,0.2)
 
     # Preallocation of memory
     dataset = np.zeros((total_samples,max_length,channel_number+1))

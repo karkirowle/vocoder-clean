@@ -55,36 +55,11 @@ class TestDataLoader(unittest.TestCase):
         options["batch_size"] = 45
         options["delay"] = 1
         options["k"] = 0
-        options["num_features"] = 15
         options["save_dir"] = "../processed_comb2_filtered_3"
-        options["out_features"] = 82
+        options["save_dir"] = "../processed_comb2_filtered_3"
+        options["percentage"] = 1
         val_gen = data_loader.DataGenerator(options,False,True)
         something, thing = val_gen.__getitem__(0)
-        train_gen = data_loader.DataGenerator(options,True,True)
-    def test_data_gen_static(self):
-        options = {}
-        options["batch_size"] = 45
-        options["delay"] = 1
-        options["k"] = 0
-        options["num_features"] = 15
-        options["save_dir"] = "../processed_comb2_filtered_3"
-        options["out_features"] = 41
-        val_gen = data_loader.DataGenerator(options,False,True)
-        X, Y = val_gen.__getitem__(0)
-        self.assertEqual(Y.shape[2],options["out_features"])
-        train_gen = data_loader.DataGenerator(options,True,True)
-    def test_swap(self):
-        options = {}
-        options["batch_size"] = 45
-        options["delay"] = 1
-        options["k"] = 0
-        options["num_features"] = 15
-        options["save_dir"] = "../processed_comb2_filtered_3"
-        options["out_features"] = 41
-        val_gen = data_loader.DataGenerator(options,False,True,True)
-        Y, X = val_gen.__getitem__(0)
-        self.assertEqual(Y.shape[2],options["out_features"])
-        self.assertEqual(X.shape[2],options["num_features"])
         train_gen = data_loader.DataGenerator(options,True,True)
 if __name__ == '__main__':
     unittest.main()

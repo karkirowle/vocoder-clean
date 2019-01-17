@@ -11,13 +11,27 @@ sns.set()
 
 idx = [1,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1]
 curves = len(idx)
-data = np.zeros((100,curves))
+seeds = 10
+data2 = np.zeros((100,curves, seeds))
 
+count = 0
 for i,id in enumerate(idx):
-    data[:,i] = np.load("copy/" + str(id) + "test.npy")
+    for j in range(seeds):
+        try:
+            data2[:,i,j] = np.load("../copy2/" +
+                            str(id) +
+                            "seed" +
+                            str(j+1) +
+                            "test.npy")
+        except:
+            count = count + 1
+            print("Error #" + str(count) + ": Retraining " +str(idx[i])
+                  + ", seed " + str(j))
 
+print(count)
 
-
+data= np.mean(data2,axis=2)
+print(data.shape)
 
 
 # T test
@@ -26,6 +40,8 @@ for i in range(curves - 1):
     print ("Paired t-test p-level for learning curve",str(i),
            str(i+1),"is",str(pvalue))
 
+plt.plot(data)
+plt.show()
 sns.set_style("white")
 
 plt.plot(data[:,0], color="black", marker="+")
@@ -45,7 +61,9 @@ from scipy import stats
 
 datapoints = np.array(idx) * 2274
 print(datapoints)
-epoch_means = np.mean(data[-5:,:],axis=0)
+#epoch_means = np.mean(data[25:26,:],axis=0)
+epoch_means = data[22,:]
+print(epoch_means)
 slope, intercept, r_value, p_value, std_error = stats.linregress(datapoints,epoch_means)
 
 x = np.linspace(0,2800,6000)
@@ -57,4 +75,5 @@ plt.scatter(datapoints, epoch_means, color="black")
 plt.xlabel("Total number of training data points")
 plt.ylabel("Validation loss")
 plt.title("Adding data helps generalisation")
-plt.savefig("../../paper/retraining_linear.pgf")
+plt.show()
+#plt.savefig("../../paper/retraining_linear.pgf")
