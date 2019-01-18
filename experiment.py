@@ -101,7 +101,7 @@ def my_main(_config,_run):
             "test" ,learning_curve)
     
     options2 = options
-    options2["batch_size"] = 227
+    options2["batch_size"] = 1
     MCD_all = proc.evaluate_validation(model,options2,41)
     print("MCD (dB) (nmkwii)" + str(MCD_all))
     return MCD_all

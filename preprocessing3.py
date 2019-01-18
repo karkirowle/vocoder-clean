@@ -405,9 +405,13 @@ def evaluate_validation(model,options,sbin):
 
     # Print full batch
     val_gen = data_loader.DataGenerator(options,False,False)
+    print(model)
+    print(val_gen)
     sp_test_hat = model.predict_generator(val_gen)
-    _, sp_test = val_gen.__getitem__(0)
+    sp_testX, sp_test = val_gen.__getitem__(0)
 
+    print(sp_testX.shape)
+    print(sp_test.shape)
     scaler_sp = joblib.load(options["save_dir"] + '/scaler_sp_.pkl')
 
     # Perform MLPG
@@ -497,7 +501,8 @@ def preprocess_save_combined(alpha=0.42,
     all_idx = range(total_samples)
 
     # Last hundred is for testing
-    files2 = files[:100]
+    files2 = files[:-100]
+    print(files2.shape)
     train_idx, val_idx = train_val_split(files2,0.2)
 
     # Preallocation of memory

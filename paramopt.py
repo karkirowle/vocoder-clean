@@ -36,7 +36,7 @@ from keras.optimizers import Adam
 
 def data():
     options = {
-        "delay": 0,
+        "delay": 1,
         "batch_size": 90,
         "k": 0,
         "save_dir": "processed_comb_test",
@@ -49,7 +49,13 @@ def data():
     return train_gen, val_gen
 
 def create_model(train_gen, val_gen):
-    options = {}
+    options = {
+        "delay": 1,
+        "batch_size": 90,
+        "k": 0,
+        "save_dir": "processed_comb_test",
+        "percentage": 1
+    }
     options["num_features"] = train_gen.in_channel
     options["out_features"] = train_gen.out_channel
 
@@ -58,13 +64,13 @@ def create_model(train_gen, val_gen):
     noise = GaussianNoise({{uniform(0,0.1)}})(inputs)
 
     # LSTM layers share number of hidden layer parameter
-    gru_1a = Bidirectional(CuDNNLSTM({{choice([128,256,512,1024])}},
+    gru_1a = Bidirectional(CuDNNLSTM({{choice([128,127])}},
                                     return_sequences=True))(noise)
-    gru_2a = Bidirectional(CuDNNLSTM({{choice([128,256,512,1024])}},
+    gru_2a = Bidirectional(CuDNNLSTM({{choice([128,127])}},
                                     return_sequences=True))(gru_1a)
-    gru_3a = Bidirectional(CuDNNLSTM({{choice([128,256,512,1024])}},
+    gru_3a = Bidirectional(CuDNNLSTM({{choice([128,127])}},
                                     return_sequences=True))(gru_2a)
-    gru_4a = Bidirectional(CuDNNLSTM({{choice([128,256,512,1024])}},
+    gru_4a = Bidirectional(CuDNNLSTM({{choice([128,127])}},
                                     return_sequences=True))(gru_3a)
 
     # Densex
@@ -81,15 +87,16 @@ def create_model(train_gen, val_gen):
     try:
         model.fit_generator(generator=train_gen,
                             validation_data = val_gen,
-                            epochs=100)
+                            epochs=2)
     except KeyboardInterrupt:
         print("Training interrupted")
 
-    model = load_model("checkpoints/" + options["experiment"] +
-                       str(options["k"]) +
-                           ".hdf5")
     options2 = options
-    options2["batch_size"] = 227
+
+    # Obtain full batch size
+    test_idx = np.load(options["save_dir"] + "/val_idx_.npy")
+    test_idx = test_idx[0]
+    options2["batch_size"] = len(test_idx)
 
     MCD_all = proc.evaluate_validation(model,options2,41)
 
