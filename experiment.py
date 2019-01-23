@@ -48,9 +48,9 @@ options = {
     "noise": 0,
     "delay": 0, # 25 
     "batch_size": 90, #45 # 90 with BLSTM2
-    "percentage": 0.5,
+    "percentage": 1,
     "k": 0,
-    "save_dir": "processed_comb2_filtered_3"
+    "save_dir": "processed_comb_test" # YOU SHOULD RUN THIS
 }
 
 np.random.seed(options["seed"])

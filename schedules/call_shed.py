@@ -54,3 +54,30 @@ def fetch_callbacks(options,_run,learning_curve):
     lh = LossHistory(_run,learning_curve)
 
     return [tb,mc,lh]
+
+def fetch_callbacks_norun(options):
+    """
+    A refugee center for the boilerplate callback codes
+    which does not inclue the run argument
+    Parameters:
+    -----------
+    options["noise"] - noise level concetanated as an exp string
+    options["experiment"] - model name
+    options["k"] - current fold
+    _run - Sacred experiment run variable
+    learning_curve - learning curve array updated pass by reference
+    Returns:
+    --------
+    Callbacks array for the Keras model
+    """
+
+    date_at_start = datetime.datetime.now()
+    date_string = date_at_start.strftime("%y-%b-%d-%H-%m")
+
+    mc = ModelCheckpoint("checkpoints/" +
+                         options["experiment"] +
+                         str(options["k"]) +
+                         ".hdf5",
+                         save_best_only=True)
+
+    return [mc]

@@ -54,7 +54,8 @@ def create_model(train_gen, val_gen):
         "batch_size": 90,
         "k": 0,
         "save_dir": "processed_comb_test",
-        "percentage": 1
+        "percentage": 1,
+        "experiment": "hyperopt"
     }
     options["num_features"] = train_gen.in_channel
     options["out_features"] = train_gen.out_channel
@@ -78,19 +79,25 @@ def create_model(train_gen, val_gen):
     model = Model(inputs, dense)
 
 
-    optimiser = optimizers.Adam(lr={{uniform(0,0.1)}})
+    optimiser = optimizers.Adam(lr={{uniform(0,0.05)}})
 
     model.compile(optimizer=optimiser,
                           loss="mse")
 
-
+    cbs = call_shed.fetch_callbacks_norun(options)
     try:
         model.fit_generator(generator=train_gen,
                             validation_data = val_gen,
-                            epochs=2)
+                            epochs=20,
+                            callbacks=cbs)
     except KeyboardInterrupt:
         print("Training interrupted")
 
+    # Reloads the best model, also conscious of exploding gradients
+    model = load_model("checkpoints/" +
+                       options["experiment"] +
+                       str(options["k"]) +
+                       ".hdf5")
     options2 = options
 
     # Obtain full batch size
@@ -99,7 +106,7 @@ def create_model(train_gen, val_gen):
     options2["batch_size"] = len(test_idx)
 
     MCD_all = proc.evaluate_validation(model,options2,41)
-
+    print("MCD (dB): " + str(MCD_all))
     return {'loss': MCD_all, 'status': STATUS_OK, 'model': model}
 
         
@@ -107,7 +114,7 @@ if __name__ == '__main__':
     best_run, best_model = optim.minimize(model=create_model,
                                           data=data,
                                           algo=tpe.suggest,
-                                          max_evals=100,
+                                          max_evals=10,
                                           trials=Trials())
 
     print("Test set is for the weak")
