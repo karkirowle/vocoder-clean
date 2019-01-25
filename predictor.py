@@ -44,11 +44,13 @@ T = X.shape[1]
 # -------------- PATHOLOGICAL SIGNAL PROCESSING ----------------------
 
 # Method 1: Clip derivative
-ema_4 =  pathology.derivative_clip(X[4,:,4])
+#ema_4 =  pathology.derivative_clip(X[4,:,4])
 
 # Method 2: Upsample the signal
-path_test = pathology.upsampling(X,total=6500, channels=[4,9])
+#path_test = pathology.upsampling(X,total=6500, channels=[4,9])
 
+# Method 3: 
+path_test = pathology.derivative_clip_2(X,0.1,[4,5])
 
 # -------------- ARTICULATORY TO ACOUSTIC ----------------------------
 
@@ -77,8 +79,10 @@ mlpg_p_generated = proc.mlpg_postprocessing(mfcc_p_normalised,
                                             options["bins_1"],
                                             scaler_sp)
 
+
 # ---------------------- SPEECH SYNTHESIS ----------------------------
 
+import sounddevice as sd
 for id in range(N):
 
     resynth_length = len(np.trim_zeros(f0[id,:],'b'))
@@ -86,16 +90,26 @@ for id in range(N):
     fname = "sounds3/" + str(id)
     print(fname)
 
-    audio.debug_resynth(f0[id,:resynth_length],
+    sound1 = audio.debug_resynth(f0[id,:resynth_length],
                         mlpg_generated[id,:resynth_length,:],
                         bap_gt_u[id,:resynth_length,:],
                         fs=16000,
                         an=5)
 
-    audio.debug_resynth(f0[id,:resynth_length],
+    sound2 = audio.debug_resynth(f0[id,:resynth_length],
                         mlpg_p_generated[id,:resynth_length,:],
                         bap_gt_u[id,:resynth_length,:],
                         fs=16000,
                         an=5)
-    
+
+
+    if id == 1:
+        sd.play(sound1[14000:22000])
+        sd.wait()
+        sd.play(sound2[14000:22000])
+        sd.wait()
+        
+    plt.plot(sound1)
+    plt.plot(sound2)
+    plt.show()
     

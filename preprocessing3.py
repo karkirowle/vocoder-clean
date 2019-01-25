@@ -407,6 +407,7 @@ def evaluate_validation(model,options,sbin):
     sp_test_hat = model.predict_generator(val_gen)
 
     _, sp_test = val_gen.__getitem__(0)
+    N = sp_test.shape[0]
 
     scaler_sp = joblib.load(options["save_dir"] + '/scaler_sp_.pkl')
 
@@ -419,6 +420,14 @@ def evaluate_validation(model,options,sbin):
     for i in range(len(scaler_sp)):
         sp_test_u[:,:,i] = scaler_sp[i].inverse_transform(sp_test[:,:,i])
 
+
+    f0 = data_loader.load_puref0(options["save_dir"],
+                             options["k"]).astype(np.float64)
+
+   # resynth_length = []
+    #for id in range(N):
+     #   resynth_length.append(len(np.trim_zeros(f0[id,:],'b')))
+    
     mcd = melcd(mlpg_generated,sp_test_u[:,:,:sbin])
 
     return mcd

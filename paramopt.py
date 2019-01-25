@@ -36,7 +36,7 @@ from keras.optimizers import Adam
 
 def data():
     options = {
-        "delay": 1,
+        "delay": 0,
         "batch_size": 90,
         "k": 0,
         "save_dir": "processed_comb_test",
@@ -49,8 +49,10 @@ def data():
     return train_gen, val_gen
 
 def create_model(train_gen, val_gen):
+
+    start_time = time.time() 
     options = {
-        "delay": 1,
+        "delay": 0,
         "batch_size": 90,
         "k": 0,
         "save_dir": "processed_comb_test",
@@ -64,17 +66,19 @@ def create_model(train_gen, val_gen):
     inputs = Input(shape=(None,options["num_features"]))
     noise = GaussianNoise({{uniform(0,0.1)}})(inputs)
 
+    # Dense layers
+
     # LSTM layers share number of hidden layer parameter
-    gru_1a = Bidirectional(CuDNNLSTM({{choice([128,127])}},
+    gru_1a = Bidirectional(CuDNNLSTM(128,
                                     return_sequences=True))(noise)
-    gru_2a = Bidirectional(CuDNNLSTM({{choice([128,127])}},
+    gru_2a = Bidirectional(CuDNNLSTM(128,
                                     return_sequences=True))(gru_1a)
-    gru_3a = Bidirectional(CuDNNLSTM({{choice([128,127])}},
+    gru_3a = Bidirectional(CuDNNLSTM(128,
                                     return_sequences=True))(gru_2a)
-    gru_4a = Bidirectional(CuDNNLSTM({{choice([128,127])}},
+    gru_4a = Bidirectional(CuDNNLSTM(128,
                                     return_sequences=True))(gru_3a)
 
-    # Densex
+    # Dense
     dense = Dense(options["out_features"])(gru_4a)
     model = Model(inputs, dense)
 
@@ -88,7 +92,7 @@ def create_model(train_gen, val_gen):
     try:
         model.fit_generator(generator=train_gen,
                             validation_data = val_gen,
-                            epochs=20,
+                            epochs=50,
                             callbacks=cbs)
     except KeyboardInterrupt:
         print("Training interrupted")
@@ -104,9 +108,13 @@ def create_model(train_gen, val_gen):
     test_idx = np.load(options["save_dir"] + "/val_idx_.npy")
     test_idx = test_idx[0]
     options2["batch_size"] = len(test_idx)
-
+    
     MCD_all = proc.evaluate_validation(model,options2,41)
+
     print("MCD (dB): " + str(MCD_all))
+    end_time = time.time()
+    total_time = end_time - start_time
+    print(total_time)
     return {'loss': MCD_all, 'status': STATUS_OK, 'model': model}
 
         
@@ -114,7 +122,7 @@ if __name__ == '__main__':
     best_run, best_model = optim.minimize(model=create_model,
                                           data=data,
                                           algo=tpe.suggest,
-                                          max_evals=10,
+                                          max_evals=50,
                                           trials=Trials())
 
     print("Test set is for the weak")

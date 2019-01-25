@@ -39,13 +39,13 @@ ex = Experiment("run_" + date_string)
 # General NN training options, specificities modified inside scope
 options = {
     "experiment" : "model_lstm",
-    "lr": 0.01, # 0.003 # not assigned in Takuragi paper
+    "lr": 0.001, # 0.003 # not assigned in Takuragi paper
     "clip": 5,
     "epochs": 50, #60
     "bins_1": 41,
     "gru": 128,
     "seed": 10,
-    "noise": 0,
+    "noise": 0.05,
     "delay": 0, # 25 
     "batch_size": 90, #45 # 90 with BLSTM2
     "percentage": 1,

@@ -45,6 +45,16 @@ def derivative_clip(signal,t=0.1,plot_figure=True):
     return ema_4
 
 
+def derivative_clip_2(dataset,t, channel_idx):
+
+    path_test = dataset 
+    path_test_diff = np.diff(dataset[:,:,channel_idx],axis=1)
+    print(path_test_diff.shape)
+    path_test_diff[:, path_test_diff > t, :] = t * np.ones_like(path_test_diff[:,path_test_diff > t, :])
+    path_test_diff[:, path_test_diff < -t, :] = -t * np.ones_like(path_test_diff[:,path_test_diff < -t, :])
+    path_test[:, :, channel_idx] = np.cumsum(np.insert(path_test_diff,0,path_test[:,0,:]))
+
+    return path_test
 def upsampling(dataset, total = 6500, channels=[4,9]):
     """
     Does the upsampling on the entire dataset
@@ -68,5 +78,22 @@ def upsampling(dataset, total = 6500, channels=[4,9]):
         path_test[:,:T,channel] = signal.resample(dataset[:,:,channel],
                                                      total,
                                                      axis=1)[:,:T]
+
+    return path_test
+
+
+def zero_interval(dataset,begin,end):
+    """
+    Zeroes an interval in the speech to mute
+    """
+    
+    path_test = dataset
+    path_test[:,begin:end,:] = 0
+    
+    return path_test
+
+def zero_channel(dataset,channel_num):
+    path_test = dataset
+    path_test[:,:,channel_num] = 0
 
     return path_test

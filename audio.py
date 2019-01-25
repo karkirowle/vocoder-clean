@@ -46,6 +46,7 @@ def debug_resynth(f0_,sp_,ap_,fs,an=2,alpha=0.42,fftbin=1024):
     sd.play(sound*3,fs)
     sd.wait()
 
+    return sound
 def save_resynth(fname,f0_,sp_,ap_,fs,an=2,alpha=0.42,fftbin=1024):
     """
     Plays a synthetised audio from the encoded parameters

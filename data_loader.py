@@ -101,7 +101,7 @@ class DataGenerator(keras.utils.Sequence):
     Generates data for Keras
     """
     
-    def __init__(self, options, train, shuffle=True,swap=False):
+    def __init__(self, options, train, shuffle=True,swap=False,shift=False):
         """
         Initialisation
         -------------
@@ -130,7 +130,7 @@ class DataGenerator(keras.utils.Sequence):
         self.shuffle = shuffle
         self.save_dir = options["save_dir"]
         self.percentage = options["percentage"]
-        
+        self.shift = shift
         self.swap = swap
         # Runtime shape inference
         Xtemp = np.load(self.save_dir + "/dataset_" + str(1) + '.npy')
@@ -204,8 +204,10 @@ class DataGenerator(keras.utils.Sequence):
             Ytemp = np.load(self.save_dir + "/spset_" + str(ID) + '.npy')
             Y[i,:,:] = Ytemp[:,:self.out_channel]
 
-        Y = delay_signal(Y,self.delay)
-
+        if self.shift:
+            random_delay = np.random.random_integers(0,100)
+            X = delay_signal(X,random_delay)
+            Y = delay_signal(Y,random_delay)
 
         if self.swap:
             return Y,X
