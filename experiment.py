@@ -41,7 +41,7 @@ options = {
     "experiment" : "model_lstm",
     "lr": 0.01, # 0.003 # not assigned in Takuragi paper
     "clip": 5,
-    "epochs": 100, #60
+    "epochs": 50, #60
     "bins_1": 41,
     "gru": 128,
     "seed": 10,
@@ -50,7 +50,8 @@ options = {
     "batch_size": 90, #45 # 90 with BLSTM2
     "percentage": 1,
     "k": 0,
-    "save_dir": "processed_comb_test" # YOU SHOULD RUN THIS
+    "save_dir": "processed_comb_test",
+    "save_analysis": True
 }
 
 np.random.seed(options["seed"])
@@ -65,7 +66,6 @@ def my_main(_config,_run):
     swap = False
     train_gen = data_loader.DataGenerator(options,True,True,swap)
     val_gen = data_loader.DataGenerator(options,False,True,swap)
-    Y, X = train_gen.__getitem__(1)
 
     options["num_features"] = train_gen.in_channel
     options["out_features"] = train_gen.out_channel
@@ -94,14 +94,14 @@ def my_main(_config,_run):
                        str(options["k"]) +
                            ".hdf5")
 
-    
-    np.save(str(options["percentage"]) +
-            "seed" +
-            str(options["seed"]) +
-            "test" ,learning_curve)
+    if options["save_analysis"]:
+        np.save(str(options["percentage"]) +
+                "seed" +
+                str(options["seed"]) +
+                "test" ,learning_curve)
     
     options2 = options
-    options2["batch_size"] = 1
+    options2["batch_size"] = 217
     MCD_all = proc.evaluate_validation(model,options2,41)
     print("MCD (dB) (nmkwii)" + str(MCD_all))
     return MCD_all

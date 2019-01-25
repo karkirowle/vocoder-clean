@@ -1,5 +1,7 @@
 import numpy as np
 from sklearn.externals import joblib
+import matplotlib.pyplot as plt
+import keras
 
 def delay_signal(signal,delay):
     """
@@ -36,119 +38,64 @@ def delay_signal(signal,delay):
                                 mode="constant")[:,:-delay,:]
     return delayed_signal
 
-def load_test(delay,percentage=1,save_dir="processed_comb2_filtered_2",
-              k=0):
+def load_puref0(save_dir,k):
     """
-    Loads the dataset for testing.
+    Loads just the unprocessed f0 values for testing
+    """
     
+    test_idx = np.load(save_dir + "/val_idx_.npy")
+    test_idx = test_idx[k]
+
+    # Infer the dataset size run-time
+    example = np.load(save_dir + "/puref0set_1.npy")
+    puref0set = np.zeros((len(test_idx),example.shape[0]))
+
+    for i, idx in enumerate(test_idx):
+        puref0set[i,:] = np.load(save_dir + "/puref0set_" +
+                                   str(idx) +
+                                   ".npy")
+
+    return puref0set
+
+def load_scalersp(save_dir):
+    """
+    Loads scaler object
+
     Parameters:
     -----------
-    delay: number of delay to use
-    percentage: percentage of the dataset to load. TODO: Does not
-    really make sense for testing, should be deprecated.
-    
-    Returns:
-    --------
-    The test sets as numpy arrays and the scaler objects
+    save_dir - directory to load data from
     """
-    
-    dataset = np.load(save_dir + "/dataset_.npy")
-    spset = np.load(save_dir + "/spset_.npy")
-    apset = np.load(save_dir + "/apset_.npy")
-    puref0set = np.load(save_dir + "/puref0set_.npy")
-    scaler_sp = joblib.load(save_dir + '/scaler_sp_.pkl')
-    scaler_ap = joblib.load(save_dir + '/scaler_ap_.pkl')
-    train_idx = np.load(save_dir + "/train_idx_.npy")
+    return joblib.load(save_dir + "/scaler_sp_.pkl")
+
+def load_bap(save_dir,k):
+    """
+    Loads unnormalised band aperiodicites
+
+    Parameters:
+    -----------
+    save_dir - diretory to load data from
+
+    """
     test_idx = np.load(save_dir + "/val_idx_.npy")
-
-    train_idx = np.concatenate(train_idx[k])
     test_idx = test_idx[k]
-    # Reduce training id size. It is shuffled by default so it is not reshuffled for brevity
-    keep_amount = int(np.ceil(percentage * len(train_idx)))
-    train_idx = train_idx[:keep_amount]
+
+    # Infer the dataset size run-time
+    example = np.load(save_dir + "/apset_1.npy")
+    ap_test = np.zeros((len(test_idx),example.shape[0], example.shape[1]))
+    bap_gt_u = np.zeros((len(test_idx),example.shape[0], example.shape[1]))
+
+    for i,idx in enumerate(test_idx):
+        ap_test[i,:,:] = np.load(save_dir + "/apset_" +
+                                   str(idx) +
+                                   ".npy")
     
-    ema_test = dataset[test_idx,:,:]
-    puref0_test = delay_signal(puref0set[test_idx,:],delay)
-    sp_test = delay_signal(spset[test_idx,:,:],delay)
-    ap_test = delay_signal(apset[test_idx,:,:],delay)
-
-    sp_test_u = np.copy(sp_test)
-    bap_gt_u = np.copy(ap_test)
-
-    for i in range(len(scaler_sp)):
-        sp_test_u[:,:,i] = scaler_sp[i].inverse_transform(sp_test[:,:,i])
+    scaler_ap = joblib.load(save_dir + "/scaler_ap_.pkl")
 
     for i in range(len(scaler_ap)):
         bap_gt_u[:,:,i] = scaler_ap[i].inverse_transform(ap_test[:,:,i])
 
-    return ema_test, sp_test, ap_test,puref0_test, scaler_sp, \
-        scaler_ap, sp_test_u, bap_gt_u
+    return bap_gt_u
 
-import matplotlib.pyplot as plt
-def load_compare(delay,save_dir="processed_comb2_filtered_2"):
-    delay = 1
-    idx = [2132,121,43]
-
-    spset = np.load(save_dir + "/spset_.npy")
-    if (delay == 0):
-        full_load = spset[idx,:,:]
-    else:
-        full_load = delay_signal(spset[idx,:,:],delay)
-    
-    print(full_load.shape)
-    single_load = np.zeros((3,1000,82))
-    for i in range(3):
-        single_temp = np.load(save_dir + "/spset_" + str(idx[i]) + ".npy")
-        single_load[i,:,:] = single_temp
-    single_load = delay_signal(single_load,1)
-    rmse = np.sqrt(np.sum(np.sum((full_load - single_load)**2)))
-    print(rmse)
-def load_data(delay,percentage=1,save_dir="processed_comb2_filtered_2", k=0):
-    
-    """
-    Loads the dataset for testing AND training.
-    
-    Parameters:
-    -----------
-    delay: number of delay to use
-    percentage: percentage of the dataset to load.
-    save_dir: directory to load the data from
-    k: which fold to use form cv folds
-    Returns:
-    --------
-    The test sets as numpy arrays and the scaler objects
-    """
-    
-    dataset = np.load(save_dir + "/dataset_.npy")
-    spset = np.load(save_dir + "/spset_.npy")
-    apset = np.load(save_dir + "/apset_.npy")
-    scaler_sp = joblib.load(save_dir + '/scaler_sp_.pkl')
-    train_idx = np.load(save_dir + "/train_idx_.npy")
-    test_idx = np.load(save_dir + "/val_idx_.npy")
-
-    train_idx = np.concatenate(train_idx[k])
-    test_idx = test_idx[k]
-    # Reduce training id size. It is shuffled by default so it is not reshuffled for brevity
-    keep_amount = int(np.ceil(percentage * len(train_idx)))
-    train_idx = train_idx[:keep_amount]
-    
-    # EMA and LAR partition
-    ema_train = dataset[train_idx,:,:]
-    ema_test = dataset[test_idx,:,:]
-    dataset = None
-    
-    sp_train = delay_signal(spset[train_idx,:,:],delay)
-    sp_test = delay_signal(spset[test_idx,:,:],delay)
-    spset = None
-
-    ap_train = delay_signal(apset[train_idx,:,:],delay)
-    ap_test = delay_signal(apset[test_idx,:,:],delay)
-    apset = None
-
-    return ema_train, ema_test, \
-        sp_train, sp_test, scaler_sp
-
-import keras
 class DataGenerator(keras.utils.Sequence):
     """
     Generates data for Keras

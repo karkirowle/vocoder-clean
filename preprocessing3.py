@@ -393,7 +393,6 @@ def evaluate_validation(model,options,sbin):
     model - keras model to use for evaluation
     options["save_dir"] - where to get the normaliser object from
     options["k"] - which fold to use
-    options["batch_size"] - size of the validation set
     sbin - cepstral bin size
 
     Returns:
@@ -403,15 +402,12 @@ def evaluate_validation(model,options,sbin):
 
     """
 
-    # Print full batch
+    # Full validation set is compared, so first we infer size
     val_gen = data_loader.DataGenerator(options,False,False)
-    print(model)
-    print(val_gen)
     sp_test_hat = model.predict_generator(val_gen)
-    sp_testX, sp_test = val_gen.__getitem__(0)
 
-    print(sp_testX.shape)
-    print(sp_test.shape)
+    _, sp_test = val_gen.__getitem__(0)
+
     scaler_sp = joblib.load(options["save_dir"] + '/scaler_sp_.pkl')
 
     # Perform MLPG

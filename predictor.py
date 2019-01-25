@@ -25,34 +25,34 @@ options = {
     "k": 0,
     "num_features": 15,
     "out_features": 82,
-    "delay": 1,
-    "save_dir": "processed_comb2_filtered_2",
-    "batch_size": 45
+    "delay": 0,
+    "save_dir": "processed_comb_test",
+    "batch_size": 45,
+    "experiment": "model_lstm0"
 }
 
-ema_test, sp_test, ap_test, givenf0_test, scaler_sp, \
-        scaler_ap, sp_test_u, bap_gt_u = data_loader.load_test(
-            options["delay"],
-            options["percentage"],
-            options["save_dir"],
-            options["k"])
 
-N = ema_test.shape[0]
-T = ema_test.shape[1]
+# --------------- LOAD DATA TO TRANSFORM -----------------------------
+options["batch_size"] = 217
+val_gen = data_loader.DataGenerator(options,False,False)
+X, Y = val_gen.__getitem__(0)
 
-options["batch_size"] = N
+N = X.shape[0]
+T = X.shape[1]
+
+
 # -------------- PATHOLOGICAL SIGNAL PROCESSING ----------------------
 
 # Method 1: Clip derivative
-ema_4 =  pathology.derivative_clip(ema_test[4,:,4])
+ema_4 =  pathology.derivative_clip(X[4,:,4])
 
 # Method 2: Upsample the signal
-path_test = pathology.upsampling(ema_test,total=6500, channels=[4,9])
+path_test = pathology.upsampling(X,total=6500, channels=[4,9])
 
 
 # -------------- ARTICULATORY TO ACOUSTIC ----------------------------
 
-mfcc_model = load_model("checkpoints/model_sp_comb_lstm_fold_0.hdf5",
+mfcc_model = load_model("checkpoints/" + options["experiment"] + ".hdf5",
                         custom_objects =
                         {'LayerNormalization': LayerNormalization} )
 
@@ -65,7 +65,10 @@ mfcc_normalised = mfcc_model.predict_generator(val_gen)
 
 mfcc_p_normalised = mfcc_model.predict(path_test).astype(np.float64)
 
-f0 = givenf0_test.astype(np.float64)
+f0 = data_loader.load_puref0(options["save_dir"],
+                             options["k"]).astype(np.float64)
+bap_gt_u = data_loader.load_bap(options["save_dir"],options["k"])
+scaler_sp = data_loader.load_scalersp(options["save_dir"])
 
 mlpg_generated = proc.mlpg_postprocessing(mfcc_normalised,
                                           options["bins_1"],
@@ -73,7 +76,6 @@ mlpg_generated = proc.mlpg_postprocessing(mfcc_normalised,
 mlpg_p_generated = proc.mlpg_postprocessing(mfcc_p_normalised,
                                             options["bins_1"],
                                             scaler_sp)
-print(mlpg_generated.shape)
 
 # ---------------------- SPEECH SYNTHESIS ----------------------------
 
@@ -85,14 +87,14 @@ for id in range(N):
     print(fname)
 
     audio.debug_resynth(f0[id,:resynth_length],
-                        mlpg_generated[id,:resynth_length],
-                        bap_gt_u[id,:resynth_length],
+                        mlpg_generated[id,:resynth_length,:],
+                        bap_gt_u[id,:resynth_length,:],
                         fs=16000,
                         an=5)
 
     audio.debug_resynth(f0[id,:resynth_length],
-                        mlpg_p_generated[id,:resynth_length],
-                        bap_gt_u[id,:resynth_length],
+                        mlpg_p_generated[id,:resynth_length,:],
+                        bap_gt_u[id,:resynth_length,:],
                         fs=16000,
                         an=5)
     
