@@ -10,7 +10,7 @@ import time
 
 
 from keras.models import load_model
-from models import model_takuragi,model_gru, model_bigru, model_blstm, model_blstm2, model_blstm2_cpu
+from models import model_blstm3, transfer_blstm, model_lstm_conv, model_conv
 from keras.callbacks import Callback, EarlyStopping, TensorBoard, ModelCheckpoint
 from keras import optimizers
 
@@ -27,45 +27,20 @@ from nnmnkwii.metrics import melcd
 
 from schedules import opt_sched
 
-# Fixing the seed for reproducibility
-
 date_at_start = datetime.datetime.now()
 date_string = date_at_start.strftime("%y-%b-%d-%H-%m")
 ex = Experiment("run_" + date_string)
 
-# TODO: Server on this side
-#ex.observers.append(MongoObserver.create(url="localhost:27017"))
-
-# General NN training options, specificities modified inside scope
-options = {
-    "experiment" : "model_lstm",
-    "lr": 0.001, # 0.003 # not assigned in Takuragi paper
-    "clip": 5,
-    "epochs": 50, #60
-    "bins_1": 41,
-    "gru": 128,
-    "seed": 10,
-    "noise": 0.05,
-    "delay": 0, # 25 
-    "batch_size": 90, #45 # 90 with BLSTM2
-    "percentage": 1,
-    "k": 0,
-    "save_dir": "processed_comb_test",
-    "save_analysis": True
-}
-
-np.random.seed(options["seed"])
-
-ex.add_config(options)
-
-@ex.automain
+@ex.main
 def my_main(_config,_run):
 
     options = _config
 
     swap = False
-    train_gen = data_loader.DataGenerator(options,True,True,swap)
-    val_gen = data_loader.DataGenerator(options,False,True,swap)
+    shift = True
+    channel_idx = np.array([0,1,2,3,4,5,6,7,10,11,12,13,14])
+    train_gen = data_loader.DataGenerator(options,True,True,swap,shift)
+    val_gen = data_loader.DataGenerator(options,False,True,swap,shift)
 
     options["num_features"] = train_gen.in_channel
     options["out_features"] = train_gen.out_channel
@@ -73,7 +48,8 @@ def my_main(_config,_run):
     # Learning curve storage
     learning_curve = np.zeros((options["epochs"]))
 
-    model = model_blstm2.LSTM_Model(options)
+    if args.conv:
+        model = model_conv.LSTM_Model(options)
     optimiser = optimizers.Adam(lr=options["lr"])
     model.trainer.compile(optimizer=optimiser,
                           loss="mse")
@@ -101,7 +77,44 @@ def my_main(_config,_run):
                 "test" ,learning_curve)
     
     options2 = options
-    options2["batch_size"] = 217
-    MCD_all = proc.evaluate_validation(model,options2,41)
+    options2["batch_size"] = 30
+    MCD_all = proc.evaluate_validation(model,options2,41,617)
     print("MCD (dB) (nmkwii)" + str(MCD_all))
     return MCD_all
+
+if __name__ == "__main__":
+
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--conv", action="store_true")
+
+    args = parser.parse_args()
+
+
+    # TODO: Server on this side
+    #ex.observers.append(MongoObserver.create(url="localhost:27017"))
+
+    # General NN training options, specificities modified inside scope
+    options = {
+        "experiment" : "model_lstm_pad",
+        "lr": 0.001, # 0.003 # not assigned in Takuragi paper
+        "clip": 5,
+        "epochs": 200, #60
+        "bins_1": 41,
+        "gru": 128,
+        "seed": 25, #10
+        "noise": 0.05,
+        "delay": 0, # 25 
+        "batch_size": 90, #45 # 90 with BLSTM2
+        "percentage": 1,
+        "k": 0,
+        "save_dir": "processed_comb_test_3",
+        "save_analysis": True
+    }
+
+    # Fixing the seed for reproducibility
+    np.random.seed(options["seed"])
+
+    ex.add_config(options)
+
+    ex.run()

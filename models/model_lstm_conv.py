@@ -1,6 +1,7 @@
 from keras.models import Model
 
 from keras.layers import Input, GaussianNoise, Bidirectional, CuDNNLSTM, TimeDistributed, Dense
+from keras.layers import Conv1D
 class LSTM_Model(object):
     
     def __init__(self,options):
@@ -8,10 +9,11 @@ class LSTM_Model(object):
         inputs = Input(shape=(None,options["num_features"]))
         noise = GaussianNoise(options["noise"])(inputs)
 
+        conv = Conv1D(16,3,padding="same")(noise)
 
         # LSTM layers share number of hidden layer parameter
         gru_1a = Bidirectional(CuDNNLSTM(options["gru"],
-                                        return_sequences=True))(noise)
+                                        return_sequences=True))(conv)
         gru_2a = Bidirectional(CuDNNLSTM(options["gru"],
                                         return_sequences=True))(gru_1a)
         gru_3a = Bidirectional(CuDNNLSTM(options["gru"],

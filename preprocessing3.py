@@ -21,6 +21,7 @@ from nnmnkwii.paramgen import mlpg
 
 # Own stuff
 import data_loader
+import audio as audio
 
 import tqdm as tqdm
 import pandas as pd
@@ -122,7 +123,6 @@ def ema_read(fname):
                 "head","oz","px","ox","oy","taxdist"]
 
     keep_keys = [keys for keys,values in columns.items()]
-
     for keys,value in columns.items():
         for no_key in no_keys:
             if no_key in keys:
@@ -163,10 +163,112 @@ def ema_read_mocha(fname):
            co["ul_x"],co["ul_y"],co["ll_x"],co["ll_y"]]
     data = data_[:,idx]
     # TODO: remove sav-gol
-    for k in range(data.shape[1]):
-        data[:,k] = savgol_filter(data[:,k], 51, 3)
+  #  for k in range(data.shape[1]):
+   #     data[:,k] = savgol_filter(data[:,k], 51, 3)
     return data
 
+def ema_read_tor(fname,start_calib):
+    """
+    Reads in tor dataset
+    """
+
+    pos_number = 3+2+2 
+    channel_number = 12
+    columns = {}
+    columns["time"] = 0
+    columns["present"] = 1
+
+    #raw = np.fromfile(fname)
+    raw = np.fromfile(fname, dtype=np.dtype('<f'))
+    data = np.reshape(raw, (-1, pos_number*channel_number))
+    
+    # Channel list
+    # ---------------
+    # 1 - Tongue back
+    # 2 - Tongue middle
+    # 3 - Tongue tip
+    # 4 - Forehead
+    # 5 - Bridge of the nose
+    # 6 - Upper lip
+    # 7 - Lower lip
+    # 8 - Lower incisor
+    # 9 - Left lip
+    # 10 - Right lip
+    # 11 - Left ear
+    # 12 - Right ear
+
+    pos = [0,2]
+    channel_idx = [0,1,2,7,4,5,6]
+    pos_idx = []
+    for channel_id in channel_idx:
+        for k in pos:
+            pos_idx.append(channel_id * pos_number + k)
+
+    temp = data[:,pos_idx]
+
+    # Inverting axes
+    temp[:,::2] = -temp[:,::2]
+
+    if start_calib == []:
+        start_calib = temp[0,:]
+    else:
+        diff = temp[0,:] - start_calib
+        temp = temp - diff
+
+    #plt.plot(temp)
+    #plt.show()
+    for k in range(temp.shape[1]):
+       temp[:,k] = savgol_filter(temp[:,k], 51, 3)
+    #t = 0.3
+    #temp_diff = np.diff(temp,axis=0)
+    #temp_diff[temp_diff > t] = 0
+    #temp_diff[temp_diff < -t] = 0
+
+    #temp = np.cumsum(np.concatenate((temp[[0],:],temp_diff),axis=0),axis=0)
+        
+    return temp, start_calib
+
+import matplotlib.animation as animation
+def visualise_torgo():
+    """
+    Quick visualisation of the TORGO dataet
+    """
+    
+    files2_t1 = np.array(sorted(glob.glob("dataset6/*.pos")))
+    print(len(files2_t1))
+    samples = len(files2_t1)
+    channels = 7
+
+    data = np.zeros((samples,1000,channels*2))
+    start_calib = []
+
+    for idx,fname in enumerate(files2_t1):
+        temp, start_calib = ema_read_tor(fname,start_calib)
+        read_in_length = np.minimum(temp.shape[0],1000)
+        data[idx,:read_in_length,:] = temp[:read_in_length,:]
+        #plt.plot(data[idx,:])
+        #plt.show()
+    numFrames = data.shape[1]
+    fig = plt.figure()
+
+    scats = []
+    for channel_idx in range(channels):
+        scats.append(plt.scatter(data[:,0,channel_idx * 2],
+                                data[:,0,channel_idx * 2 + 1]))
+    ani = animation.FuncAnimation(fig, update_plot, frames=range(numFrames),
+                                  fargs=(data, scats))
+    plt.legend(['tongue back', 'tongue middle', 'tongue tip',
+                'lower incisor', 'nose',
+                'uppper lip', 'lower lip'])
+    plt.xlim([-50,50])
+    plt.ylim([-50,50])
+    plt.show()
+
+def update_plot(i,data,scats):
+
+    for idx,scat in enumerate(scats):
+        scat.set_offsets(data[:,i,[idx * 2, idx * 2 + 1]])
+    return scats,
 
 def train_val_split(files,val_split, k=10):
     """
@@ -386,16 +488,18 @@ def MLPG_fetch_loss(options):
         return K.mean(K.square(y_pred_mlpg - y_true_mlpg), axis=-1)
     return MLPG_loss
 
-def evaluate_validation(model,options,sbin):
+def evaluate_validation(model,options,sbin,validation_size):
     """
     Parameters:
     --------------
     model - keras model to use for evaluation
     options["save_dir"] - where to get the normaliser object from
     options["k"] - which fold to use
+    options["batch_size"] - size of the validation set
+    pa
     sbin - cepstral bin size
 
-    Returns:
+    Return
     --------
     MCD - mel cepstral distortion
 
@@ -403,10 +507,15 @@ def evaluate_validation(model,options,sbin):
     """
 
     # Full validation set is compared, so first we infer size
+    
     val_gen = data_loader.DataGenerator(options,False,False)
     sp_test_hat = model.predict_generator(val_gen)
 
+    options["batch_size"] = sp_test_hat.shape[0]
+    val_gen = data_loader.DataGenerator(options,False,False)
+
     _, sp_test = val_gen.__getitem__(0)
+
     N = sp_test.shape[0]
 
     scaler_sp = joblib.load(options["save_dir"] + '/scaler_sp_.pkl')
@@ -432,6 +541,8 @@ def evaluate_validation(model,options,sbin):
 
     return mcd
 
+def exp_func(x,a,b,c):
+    return a*np*exp(-b*x) + c
 
 def f0_process(f0,linear=True):
     """
@@ -440,26 +551,52 @@ def f0_process(f0,linear=True):
     -----------
     f0 signal
     linear - Linear interpolation for values where np.log(0) = -np.inf
+    If every value is 0, it returns 0 for all
+
     Return:
     -----------
     the log interpolated f0
     """
 
     if (linear):
-        f0 = interp1d(np.log(f0,
-                             out=-np.inf*np.ones_like(f0),
-                             where=(f0!=0)))
-    else:
-        # Calculate running average
-        N = len(f0)
-        print(f0.shape)
+        f0_log = np.log(f0,
+                        out=-np.inf*np.ones_like(f0),
+                        where=(f0!=0))
 
-        # The beggining is padded with the first element with noise?
-        print(f0.shape)
-        plt.plot(f0)
+        if (np.isinf(f0_log).all()):
+            f0 = np.zeros_like(f0)
+        else:
+            f0 = interp1d(f0_log,kind="slinear")
+    else:
+
+        # Calculate running average for all points
+
+        # Exponential decay function
+        f0_ = pd.Series(np.log(f0,
+                               out=-np.nan*np.ones_like(f0),
+                               where=(f0!=0)))
+        f0_ = f0_.interpolate(limit_area="inside",method="polynomial", order=2)
+        plt.plot(f0_)
         plt.show()
     return f0
 
+def check_paired():
+    paths = ["dataset2/*.ema", "dataset/msak*.ema",
+             "dataset/fsew*.ema", "dataset3/*.pos",
+             "dataset4/*.pos", "dataset5/*.pos",
+             "dataset6/*.pos", "dataset7/*.pos",
+             "dataset8/*.pos", "dataset9/*.pos",
+             "dataset10/*.pos", "dataset11/*.pos",
+             "dataset12/*.pos"]
+
+    files = np.array([np.array(sorted(glob.glob(path))) for path in paths])
+    files = np.concatenate(files)
+
+    for fname in files:
+        fname_wo_extension = fname[:-3 or None]
+        wav_path = fname_wo_extension + "wav"
+        sound_data, fs = sf.read(wav_path)
+    print("Everything is paired! Nice work")
     
 def preprocess_save_combined(alpha=0.42,
                              max_length=1000, fs=16000, val_split=0.2,
@@ -468,7 +605,7 @@ def preprocess_save_combined(alpha=0.42,
                              normalisation_output = True,
                              channel_number = 14,
                              factor = 80,
-                             save_dir = "processed_comb_test"):
+                             save_dir = "processed_comb_test_3_padded"):
     """
     The main entry point to the preprocessing pipeline
 
@@ -491,12 +628,19 @@ def preprocess_save_combined(alpha=0.42,
     --------
     """
 
+    check_paired()
     # Fetching and shuffling the appropriate file lists
     if combined:
-        files1 = np.array(sorted(glob.glob("dataset2/*.ema")))
-        files2_m = np.array(sorted(glob.glob("dataset/msak*.ema")))
-        files2_f = np.array(sorted(glob.glob("dataset/fsew*.ema")))
-        files = np.concatenate((files1,files2_m,files2_f))
+        paths = ["dataset2/*.ema", "dataset/msak*.ema",
+                 "dataset/fsew*.ema", "dataset3/*.pos",
+                 "dataset4/*.pos", "dataset5/*.pos",
+                 "dataset6/*.pos", "dataset7/*.pos",
+                 "dataset8/*.pos", "dataset9/*.pos",
+                 "dataset10/*.pos", "dataset11/*pos",
+                 "dataset12/*.pos"]
+
+        files = np.array([np.array(sorted(glob.glob(path))) for path in paths])
+        files = np.concatenate(files)
     else:
         files = np.array(glob.glob("dataset2/*.ema"))
     np.random.shuffle(files)
@@ -519,8 +663,19 @@ def preprocess_save_combined(alpha=0.42,
     # Which ID correspond to which category/dataset, male, female
     cat_id = { "male": [],
                "female": [],
-               "mngu0": []}
+               "mngu0": [],
+               "d3": [],
+               "d4": [],
+               "d5": [],
+               "d6": [],
+               "d7": [],
+               "d8": [],
+               "d9": [],
+               "d10": [],
+               "d11": [],
+               "d12": []}
 
+    start_calib = []
     # Append the appropriate id and read files while showing progress
     for k,fname in tqdm.tqdm(enumerate((files)), total=len(files)):
 
@@ -528,14 +683,23 @@ def preprocess_save_combined(alpha=0.42,
             data = ema_read(fname)
             cat_id["mngu0"].append(k)
         else:
-            data = ema_read_mocha(fname)
             if "fsew" in fname:
                 cat_id["female"].append(k)
+                data = ema_read_mocha(fname)
+                # Resample so the datasets have same sampling frequency
+                data = resample(data,int(np.ceil(data.shape[0]*2/5)))
             if "msak" in fname:
                 cat_id["male"].append(k)
-            # Resample so the datasets have same sampling frequency
-            data = resample(data,int(np.ceil(data.shape[0]*2/5)))
-
+                data = ema_read_mocha(fname)
+                # Resample so the datasets have same sampling frequency
+                data = resample(data,int(np.ceil(data.shape[0]*2/5)))
+            shorts = ["d3", "d4", "d5", "d6", "d7", "d8", "d9", "d10",
+                      "d11", "d12"]
+            for short in shorts:
+                if short in fname:
+                    cat_id[short].append(k)
+                    data, start_calib = ema_read_tor(fname,start_calib)
+                    
         # We don't need the time and present rows
         read_in_length = np.minimum(data.shape[0],max_length)
         dataset[k,:read_in_length,:-1] = data[:read_in_length,:]
@@ -547,10 +711,11 @@ def preprocess_save_combined(alpha=0.42,
         fname_wo_extension = fname[:-3 or None]
         wav_path = fname_wo_extension + "wav"
         sound_data, fs = sf.read(wav_path)
-
-        
+        if (len(sound_data.shape) == 2):
+            sound_data = sound_data[:,1].copy(order='C')
         f0, sp, ap = pw.wav2world(sound_data, fs, 5) # 2
 
+        
         # The general way is to either truncate or zero-pad
         T = f0.shape[0]
         read_in_length = np.minimum(T,max_length)
@@ -562,13 +727,19 @@ def preprocess_save_combined(alpha=0.42,
 
         puref0set[k,:read_in_length] = f0[:read_in_length]
         spset[k,:read_in_length,:] = sp_delta[:read_in_length,:]
+
+        # Also doing the repetition for the spectra
+        if (max_length > T):
+            spset[k,T:,:] = np.mean(sp_delta[T-5:T-1,:],axis=0)
+
         apset[k,:read_in_length,:] = ap[:read_in_length,:]
 
 
     if normalisation_input:
 
         # Normalise the articulographs differently for different references
-        cats = ["male", "female", "mngu0"]
+        cats = ["male", "female", "mngu0","d3","d4","d5","d6","d7",
+                "d8","d9","d10","d11","d12"]
         
         # Normalise ema feature wise but do not return normaliser object
         for j in range(channel_number + 1):
@@ -613,10 +784,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--proc", action="store_true")
     parser.add_argument("--fig", action="store_true")
+    parser.add_argument("--vis_tor", action="store_true")
+
 
     args = parser.parse_args()
 
     if args.proc:
         preprocess_save_combined()
     if args.fig:
-       figure_reproduction() 
+       figure_reproduction()
+    if args.vis_tor:
+        visualise_torgo()

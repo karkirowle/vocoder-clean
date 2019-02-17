@@ -101,7 +101,7 @@ class DataGenerator(keras.utils.Sequence):
     Generates data for Keras
     """
     
-    def __init__(self, options, train, shuffle=True,swap=False,shift=False):
+    def __init__(self, options, train, shuffle=True,swap=False,shift=False, channel_idx=[]):
         """
         Initialisation
         -------------
@@ -132,10 +132,19 @@ class DataGenerator(keras.utils.Sequence):
         self.percentage = options["percentage"]
         self.shift = shift
         self.swap = swap
-        # Runtime shape inference
+        self.channel_idx = channel_idx
+
         Xtemp = np.load(self.save_dir + "/dataset_" + str(1) + '.npy')
-        self.in_channel = Xtemp.shape[1]
-        self.T = Xtemp.shape[0]
+
+        if (self.channel_idx == []):
+            # Runtime shape inference
+            self.in_channel = Xtemp.shape[1]
+            self.T = Xtemp.shape[0]
+            self.channel_idx = [i for i in range(self.in_channel)]
+        else:
+            self.in_channel = self.channel_idx.shape[0] 
+            self.T = Xtemp.shape[0]
+            
         Ytemp = np.load(self.save_dir + "/spset_" + str(1) + '.npy')
         self.out_channel = Ytemp.shape[1]
         
@@ -191,26 +200,33 @@ class DataGenerator(keras.utils.Sequence):
         # Initialization
         X = np.empty((self.batch_size, self.T, self.in_channel))
         Y = np.empty((self.batch_size, self.T, self.out_channel))
-        
+        weights = np.zeros((self.batch_size, self.T))
+        random_delay = np.random.random_integers(0,100)
 
         # Generate data
         for i, ID in enumerate(list_IDs_temp):
             # Store sample
 
             Xtemp = np.load(self.save_dir + "/dataset_" + str(ID) + '.npy')
-            X[i,:,:] = Xtemp
+            X[i,:,:] = Xtemp[:,self.channel_idx]
 
             # Store class - truncate the end if out_channel is less
             Ytemp = np.load(self.save_dir + "/spset_" + str(ID) + '.npy')
             Y[i,:,:] = Ytemp[:,:self.out_channel]
 
+            # Fetching the signal length for the pure f0
+            # and their weighting in the loss function
+            f0 = np.load(self.save_dir + "/puref0set_" + str(ID) + '.npy')
+            T = len(np.trim_zeros(f0,'b'))
+            weights[i,:T+random_delay] = 1
+            weights[i,:random_delay] = 0
+            
         if self.shift:
-            random_delay = np.random.random_integers(0,100)
             X = delay_signal(X,random_delay)
             Y = delay_signal(Y,random_delay)
 
         if self.swap:
-            return Y,X
+            return Y, X
         else:
             return X, Y
 
