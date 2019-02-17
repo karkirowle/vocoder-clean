@@ -50,6 +50,11 @@ def my_main(_config,_run):
 
     if args.conv:
         model = model_conv.LSTM_Model(options)
+    if args.trans:
+        model = transfer_blstm.LSTM_Model(options)
+    if args.lstm_conv:
+        model = model_lstm_conv.LSTM_Model(options)
+        
     optimiser = optimizers.Adam(lr=options["lr"])
     model.trainer.compile(optimizer=optimiser,
                           loss="mse")
@@ -87,7 +92,8 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--conv", action="store_true")
-
+    parser.add_argument("--trans", action="store_true")
+    parser.add_argument("--lstm_conv", action="store_true")
     args = parser.parse_args()
 
 
@@ -105,7 +111,7 @@ if __name__ == "__main__":
         "seed": 25, #10
         "noise": 0.05,
         "delay": 0, # 25 
-        "batch_size": 90, #45 # 90 with BLSTM2
+        "batch_size": 45, #45 # 90 with BLSTM2
         "percentage": 1,
         "k": 0,
         "save_dir": "processed_comb_test_3",
