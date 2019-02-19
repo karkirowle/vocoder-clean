@@ -101,6 +101,7 @@ if __name__ == "__main__":
                                               "d5", "d6", "d7", "d8",
                                               "d9", "d10", "d11", "d12"])
     parser.add_argument('--batch', type=int)
+    parser.add_argument('--experiment', type=str)
     args = parser.parse_args()
 
     # TODO: Server on this side
@@ -108,7 +109,7 @@ if __name__ == "__main__":
 
     # General NN training options, specificities modified inside scope
     options = {
-        "experiment" : "model_lstm_pad",
+        "experiment" : args.experiment,
         "lr": 0.001, # 0.003 # not assigned in Takuragi paper
         "clip": 5,
         "epochs": 200, #60
