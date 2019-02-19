@@ -643,6 +643,7 @@ def preprocess_save_combined(alpha=0.42,
         files = np.concatenate(files)
     else:
         files = np.array(glob.glob("dataset2/*.ema"))
+
     np.random.shuffle(files)
     total_samples = len(files)
     print("Preprocessing " + str(total_samples) + " samples")
@@ -675,6 +676,7 @@ def preprocess_save_combined(alpha=0.42,
                "d11": [],
                "d12": []}
 
+    
     start_calib = []
     # Append the appropriate id and read files while showing progress
     for k,fname in tqdm.tqdm(enumerate((files)), total=len(files)):
@@ -774,7 +776,7 @@ def preprocess_save_combined(alpha=0.42,
     np.save(save_dir + "/dataset", dataset)
     np.save(save_dir + "/train_idx_", train_idx)
     np.save(save_dir + "/val_idx_", val_idx)
-
+    np.save(save_dir + "/cat_id", cat_id)
     joblib.dump(scaler_sp, save_dir + '/scaler_sp_.pkl')
     joblib.dump(scaler_ap, save_dir + '/scaler_ap_.pkl')
 

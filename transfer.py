@@ -1,4 +1,3 @@
-
 import numpy as np
 
 from sklearn import preprocessing # For MinMax scale
@@ -39,8 +38,10 @@ def my_main(_config,_run):
     swap = False
     shift = True
     channel_idx = np.array([0,1,2,3,4,5,6,7,10,11,12,13,14])
-    train_gen = data_loader.DataGenerator(options,True,True,swap,shift,label="mngu0")
-    val_gen = data_loader.DataGenerator(options,False,True,swap,shift,label="mngu0")
+
+    # ----------- STEP 1 - Train on all data -------------------------
+    train_gen = data_loader.DataGenerator(options,True,True,swap,shift,label="all")
+    val_gen = data_loader.DataGenerator(options,False,True,swap,shift,label="all")
 
     options["num_features"] = train_gen.in_channel
     options["out_features"] = train_gen.out_channel
@@ -75,6 +76,23 @@ def my_main(_config,_run):
                        str(options["k"]) +
                            ".hdf5")
 
+    # ----------- STEP 2 - Train on only mngu0 -----------------------
+    train_gen = data_loader.DataGenerator(options,True,True,swap,shift,label="mngu0")
+    val_gen = data_loader.DataGenerator(options,False,True,swap,shift,label="mngu0")
+
+    try:
+        model.fit_generator(generator=train_gen,
+                                    validation_data = val_gen,
+                                    epochs=options["epochs"],
+                                    callbacks=cb)
+    except KeyboardInterrupt:
+        print("Training interrupted")
+
+    
+    model = load_model("checkpoints/" + options["experiment"] +
+                       str(options["k"]) +
+                           ".hdf5")
+
     if options["save_analysis"]:
         np.save(str(options["percentage"]) +
                 "seed" +
@@ -105,7 +123,7 @@ if __name__ == "__main__":
         "experiment" : "model_lstm_pad",
         "lr": 0.001, # 0.003 # not assigned in Takuragi paper
         "clip": 5,
-        "epochs": 200, #60
+        "epochs": 50, #60
         "bins_1": 41,
         "gru": 128,
         "seed": 25, #10

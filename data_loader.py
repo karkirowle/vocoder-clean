@@ -101,7 +101,8 @@ class DataGenerator(keras.utils.Sequence):
     Generates data for Keras
     """
     
-    def __init__(self, options, train, shuffle=True,swap=False,shift=False, channel_idx=[]):
+    def __init__(self, options, train, shuffle=True,
+                 swap=False,shift=False, channel_idx=[], label="all"):
         """
         Initialisation
         -------------
@@ -122,7 +123,7 @@ class DataGenerator(keras.utils.Sequence):
         percentage - amount of training data to use
         shuffle - shuffle the IDs
         swap - swap so that Y is regressed against X
-
+        label - which datasets to load, default all
         """
         self.batch_size = options["batch_size"]
         self.delay = options["delay"]
@@ -134,6 +135,7 @@ class DataGenerator(keras.utils.Sequence):
         self.swap = swap
         self.channel_idx = channel_idx
 
+        cat_id = np.load(self.save_dir + "/cat_id.npy")
         Xtemp = np.load(self.save_dir + "/dataset_" + str(1) + '.npy')
 
         if (self.channel_idx == []):
@@ -150,8 +152,13 @@ class DataGenerator(keras.utils.Sequence):
         
         if (train):
             train_idx = np.load(options["save_dir"] + "/train_idx_.npy")
-            train_idx = train_idx[self.k]
-            
+
+            if label is "all":
+                train_idx = train_idx[self.k]
+            else:
+                train_idx = np.intersect1d(train_idx[self.k],
+                                           cat_id.item()[label])
+
             size_to_use = int(np.ceil(len(train_idx) * self.percentage))
             print(size_to_use)
             train_idx = train_idx[:size_to_use]
@@ -159,7 +166,13 @@ class DataGenerator(keras.utils.Sequence):
             self.list_IDs = train_idx
         else:
             test_idx = np.load(options["save_dir"] + "/val_idx_.npy")
-            test_idx = test_idx[self.k]
+
+            if label is "all":
+                test_idx = test_idx[self.k]
+            else:
+                test_idx = np.intersect1d(test_idx[self.k],
+                                           cat_id.item()[label])
+
             self.list_IDs = test_idx            
 
         self.on_epoch_end()
