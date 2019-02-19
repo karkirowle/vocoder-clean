@@ -173,7 +173,7 @@ class DataGenerator(keras.utils.Sequence):
                 
                 test_idx = np.intersect1d(test_idx[self.k],
                                            cat_id.item()[label])
-                print(test_idx)
+                
             self.list_IDs = test_idx            
 
         self.on_epoch_end()

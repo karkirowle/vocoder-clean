@@ -40,6 +40,9 @@ def my_main(_config,_run):
     channel_idx = np.array([0,1,2,3,4,5,6,7,10,11,12,13,14])
 
     # ----------- STEP 1 - Train on all data -------------------------
+
+    # PRESET - Training on all data is not determined externally
+    options["batch_size"] = 100
     train_gen = data_loader.DataGenerator(options,True,True,swap,shift,label="all")
     val_gen = data_loader.DataGenerator(options,False,True,swap,shift,label="all")
 
@@ -78,6 +81,8 @@ def my_main(_config,_run):
                            ".hdf5")
 
     # ----------- STEP 2 - Train on only mngu0 -----------------------
+    # PRESET - Training on special data determined externally
+    options["batch_size"] = args.batch
     train_gen = data_loader.DataGenerator(options,True,True,swap,shift,
                                           label=args.dataset)
     val_gen = data_loader.DataGenerator(options,False,True,swap,shift,
