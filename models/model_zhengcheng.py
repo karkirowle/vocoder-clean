@@ -10,13 +10,13 @@ class LSTM_Model(object):
         noise = GaussianNoise(options["noise"])(inputs)
 
         # LSTM layers share number of hidden layer parameter
-        gru_1a = Bidirectional(CuDNNLSTM(options["gru"],
+        gru_1a = Bidirectional(CuDNNLSTM(128,
                                         return_sequences=True))(noise)
-        gru_2a = Bidirectional(CuDNNLSTM(options["gru"],
+        gru_2a = Bidirectional(CuDNNLSTM(128,
                                         return_sequences=True))(gru_1a)
-        gru_3a = Bidirectional(CuDNNLSTM(options["gru"],
+        gru_3a = Bidirectional(CuDNNLSTM(128,
                                         return_sequences=True))(gru_2a)
-        gru_4a = Bidirectional(CuDNNLSTM(options["gru"],
+        gru_4a = Bidirectional(CuDNNLSTM(128,
                                         return_sequences=True))(gru_3a)
 
         # Densex

@@ -62,15 +62,6 @@ class GRU_Model(object):
         dense = Dense(options["out_features"],
                       kernel_initializer="lecun_normal")(gru_2a)
 
-        bins_1 = options["bins_1"]
-        scaler_sp = joblib.load(options["save_dir"] + '/scaler_sp_.pkl')
-        mlpg_layer = Lambda(lambda mfcc:
-                            proc.mlpg_postprocessing(mfcc,
-                                                        bins_1,
-                                                        scaler_sp))(
-                                                            dense)
-        self.trainer = Model(inputs,mlpg_layer)
+        self.trainer = Model(inputs,dense)
     
-#        MLPG_end = MLPGLayer(options["bins_1"],options,name="keksz")(dense)
 
-      #  self.trainer = Model(inputs, MLPG_end)

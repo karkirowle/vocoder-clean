@@ -508,18 +508,17 @@ def evaluate_validation(model,options,sbin,validation_size,label):
 
     # Full validation set is compared, so first we infer size
     
-    val_gen = data_loader.DataGenerator(options,False,False, )
+    val_gen = data_loader.DataGenerator(options,False,False,False,False,
+                                        label=label)
     sp_test_hat = model.predict_generator(val_gen)
 
     options["batch_size"] = sp_test_hat.shape[0]
-
-    val_gen = data_loader.DataGenerator(options,False,True,False,False,
+    val_gen = data_loader.DataGenerator(options,False,False,False,False,
                                         label=label)
 
-    _, sp_test = val_gen.__getitem__(0)
+    sp_train, sp_test, _ = val_gen.__getitem__(0)
 
     N = sp_test.shape[0]
-
     scaler_sp = joblib.load(options["save_dir"] + '/scaler_sp_.pkl')
 
     # Perform MLPG
@@ -535,16 +534,9 @@ def evaluate_validation(model,options,sbin,validation_size,label):
 
     f0 = data_loader.load_puref0(options["save_dir"],
                              options["k"]).astype(np.float64)
-
-   # resynth_length = []
-    #for id in range(N):
-     #   resynth_length.append(len(np.trim_zeros(f0[id,:],'b')))
-    for i in range(sp_test_hat.shape[0]):
-        plt.plot(sp_test_hat[i,:,1])
-        plt.plot(sp_test_hat_u[i,:,1])
-        plt.plot(mlpg_generated[i,:,1])
-        plt.plot(sp_test_u[i,:,1])
-        plt.show()
+    print(N)
+        
+        #plt.show()
     mcd = melcd(mlpg_generated,sp_test_u[:,:,:sbin])
 
     return mcd

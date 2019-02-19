@@ -11,8 +11,10 @@ import time
 
 from keras.models import load_model
 from models import model_blstm3, transfer_blstm, model_lstm_conv, model_conv, model_bigru
+from models import model_takuragi, model_zhengcheng
 from keras.callbacks import Callback, EarlyStopping, TensorBoard, ModelCheckpoint
 from keras import optimizers
+from keras_layer_normalization import LayerNormalization
 
 import data_loader
 import preprocessing3 as proc
@@ -38,10 +40,16 @@ def my_main(_config,_run):
 
     swap = False
     shift = True
-    channel_idx = np.array([0,1,2,3,4,5,6,7,10,11,12,13,14])
-    train_gen = data_loader.DataGenerator(options,True,True,swap,shift,
+
+    if args.f0:
+        channel_idx = np.array([0,1,2,3,4,5,6,7,10,11,12,13,14])
+    else:
+        channel_idx = np.array([0,1,2,3,4,5,6,7,10,11,12,13])
+    train_gen = data_loader.DataGenerator(options,True,True,swap,
+                                          args.shift,
                                           label=args.dataset)
-    val_gen = data_loader.DataGenerator(options,False,True,swap,shift,
+    val_gen = data_loader.DataGenerator(options,False,True,swap,
+                                        args.shift,
                                         label=args.dataset)
 
     options["num_features"] = train_gen.in_channel
@@ -58,23 +66,33 @@ def my_main(_config,_run):
         model = model_lstm_conv.LSTM_Model(options)
     if args.bi_gru:
         model = model_bigru.GRU_Model(options)
+    if args.takuragi:
+        model = model_takuragi.GRU_Model(options)
+    if args.liu:
+        model = model_zhengcheng.LSTM_Model(options)
+        
     optimiser = optimizers.Adam(lr=options["lr"])
     model.trainer.compile(optimizer=optimiser,
-                          loss="mse")
+                          loss="mse",
+                          sample_weight_mode="temporal")
 
     cb = call_shed.fetch_callbacks(options,_run,learning_curve)
-    try:
-        model.trainer.fit_generator(generator=train_gen,
-                                    validation_data = val_gen,
-                                    epochs=options["epochs"],
-                                    callbacks=cb)
-        
-    except KeyboardInterrupt:
-        print("Training interrupted")
+
+    if args.train:
+        try:
+            model.trainer.fit_generator(generator=train_gen,
+                                        validation_data = val_gen,
+                                        epochs=options["epochs"],
+                                        callbacks=cb)
+
+        except KeyboardInterrupt:
+            print("Training interrupted")
 
     model = load_model("checkpoints/" + options["experiment"] +
                        str(options["k"]) +
-                           ".hdf5")
+                           ".hdf5",
+                       custom_objects =
+                        {'LayerNormalization': LayerNormalization} )
 
     if options["save_analysis"]:
         np.save(str(options["percentage"]) +
@@ -95,12 +113,18 @@ if __name__ == "__main__":
     parser.add_argument("--conv", action="store_true")
     parser.add_argument("--trans", action="store_true")
     parser.add_argument("--lstm_conv", action="store_true")
+    parser.add_argument("--takuragi", action="store_true")
+    parser.add_argument("--f0", action="store_true")
+    parser.add_argument("--train", action="store_true")
     parser.add_argument("--bi_gru", action="store_true")
+    parser.add_argument("--liu", action="store_true")
     parser.add_argument("--dataset", choices=["all", "mngu0","male",
                                               "female", "d3", "d4",
                                               "d5", "d6", "d7", "d8",
                                               "d9", "d10", "d11", "d12"])
     parser.add_argument('--batch', type=int)
+    parser.add_argument('--lr', type=float)
+    parser.add_argument('--shift', type=int)
     parser.add_argument('--experiment', type=str)
     args = parser.parse_args()
 
@@ -112,11 +136,11 @@ if __name__ == "__main__":
         "experiment" : args.experiment,
         "lr": 0.003, #0.001 # 0.003 # not assigned in Takuragi paper
         "clip": 5,
-        "epochs": 200, #60
+        "epochs": 100, #60
         "bins_1": 41,
         "gru": 128,
         "seed": 25, #10
-        "noise": 0.05,
+        "noise": 0, #?
         "delay": 0, # 25 
         "batch_size": args.batch, #45 # 90 with BLSTM2
         "percentage": 1,

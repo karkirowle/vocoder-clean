@@ -153,7 +153,8 @@ class DataGenerator(keras.utils.Sequence):
         if (train):
             train_idx = np.load(options["save_dir"] + "/train_idx_.npy")
 
-            if label is "all":
+            print(label)
+            if label == "all":
                 train_idx = train_idx[self.k]
             else:
                 train_idx = np.intersect1d(train_idx[self.k],
@@ -167,7 +168,7 @@ class DataGenerator(keras.utils.Sequence):
         else:
             test_idx = np.load(options["save_dir"] + "/val_idx_.npy")
 
-            if label is "all":
+            if label == "all":
                 test_idx = test_idx[self.k]
             else:
                 
@@ -194,9 +195,9 @@ class DataGenerator(keras.utils.Sequence):
         list_IDs_temp = [self.list_IDs[k] for k in indexes]
 
         # Generate data
-        X, y = self.__data_generation(list_IDs_temp)
+        X, y, w = self.__data_generation(list_IDs_temp)
 
-        return X, y
+        return X, y, w
 
     def on_epoch_end(self):
         """
@@ -240,7 +241,7 @@ class DataGenerator(keras.utils.Sequence):
             Y = delay_signal(Y,random_delay)
 
         if self.swap:
-            return Y, X
+            return Y, X, weights
         else:
-            return X, Y
+            return X, Y, weights
 
