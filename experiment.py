@@ -39,8 +39,10 @@ def my_main(_config,_run):
     swap = False
     shift = True
     channel_idx = np.array([0,1,2,3,4,5,6,7,10,11,12,13,14])
-    train_gen = data_loader.DataGenerator(options,True,True,swap,shift,label="mngu0")
-    val_gen = data_loader.DataGenerator(options,False,True,swap,shift,label="mngu0")
+    train_gen = data_loader.DataGenerator(options,True,True,swap,shift,
+                                          label=args.dataset)
+    val_gen = data_loader.DataGenerator(options,False,True,swap,shift,
+                                        label=args.dataset)
 
     options["num_features"] = train_gen.in_channel
     options["out_features"] = train_gen.out_channel
@@ -94,8 +96,12 @@ if __name__ == "__main__":
     parser.add_argument("--conv", action="store_true")
     parser.add_argument("--trans", action="store_true")
     parser.add_argument("--lstm_conv", action="store_true")
+    parser.add_argument("--dataset", choices=["all", "mngu0","male",
+                                              "female", "d3", "d4",
+                                              "d5", "d6", "d7", "d8",
+                                              "d9", "d10", "d11", "d12"])
+    
     args = parser.parse_args()
-
 
     # TODO: Server on this side
     #ex.observers.append(MongoObserver.create(url="localhost:27017"))
