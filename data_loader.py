@@ -170,9 +170,10 @@ class DataGenerator(keras.utils.Sequence):
             if label is "all":
                 test_idx = test_idx[self.k]
             else:
+                
                 test_idx = np.intersect1d(test_idx[self.k],
                                            cat_id.item()[label])
-
+                print(test_idx)
             self.list_IDs = test_idx            
 
         self.on_epoch_end()

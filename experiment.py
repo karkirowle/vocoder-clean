@@ -100,7 +100,7 @@ if __name__ == "__main__":
                                               "female", "d3", "d4",
                                               "d5", "d6", "d7", "d8",
                                               "d9", "d10", "d11", "d12"])
-    
+    parser.add_argument('--batch', type=int)
     args = parser.parse_args()
 
     # TODO: Server on this side
@@ -117,7 +117,7 @@ if __name__ == "__main__":
         "seed": 25, #10
         "noise": 0.05,
         "delay": 0, # 25 
-        "batch_size": 45, #45 # 90 with BLSTM2
+        "batch_size": args.batch, #45 # 90 with BLSTM2
         "percentage": 1,
         "k": 0,
         "save_dir": "processed_comb_test_3_padded",
