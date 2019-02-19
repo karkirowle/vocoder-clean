@@ -10,7 +10,7 @@ import time
 
 
 from keras.models import load_model
-from models import model_blstm3, transfer_blstm, model_lstm_conv, model_conv
+from models import model_blstm3, transfer_blstm, model_lstm_conv, model_conv, model_bigru
 from keras.callbacks import Callback, EarlyStopping, TensorBoard, ModelCheckpoint
 from keras import optimizers
 
@@ -56,15 +56,14 @@ def my_main(_config,_run):
         model = transfer_blstm.LSTM_Model(options)
     if args.lstm_conv:
         model = model_lstm_conv.LSTM_Model(options)
-        
+    if args.bi_gru:
+        model = model_bigru.GRU_Model(options)
     optimiser = optimizers.Adam(lr=options["lr"])
     model.trainer.compile(optimizer=optimiser,
                           loss="mse")
 
     cb = call_shed.fetch_callbacks(options,_run,learning_curve)
-
     try:
-
         model.trainer.fit_generator(generator=train_gen,
                                     validation_data = val_gen,
                                     epochs=options["epochs"],
@@ -85,7 +84,7 @@ def my_main(_config,_run):
     
     options2 = options
     options2["batch_size"] = 30
-    MCD_all = proc.evaluate_validation(model,options2,41,617)
+    MCD_all = proc.evaluate_validation(model,options2,41,617,args.dataset)
     print("MCD (dB) (nmkwii)" + str(MCD_all))
     return MCD_all
 
@@ -96,6 +95,7 @@ if __name__ == "__main__":
     parser.add_argument("--conv", action="store_true")
     parser.add_argument("--trans", action="store_true")
     parser.add_argument("--lstm_conv", action="store_true")
+    parser.add_argument("--bi_gru", action="store_true")
     parser.add_argument("--dataset", choices=["all", "mngu0","male",
                                               "female", "d3", "d4",
                                               "d5", "d6", "d7", "d8",
@@ -110,7 +110,7 @@ if __name__ == "__main__":
     # General NN training options, specificities modified inside scope
     options = {
         "experiment" : args.experiment,
-        "lr": 0.001, # 0.003 # not assigned in Takuragi paper
+        "lr": 0.003, #0.001 # 0.003 # not assigned in Takuragi paper
         "clip": 5,
         "epochs": 200, #60
         "bins_1": 41,

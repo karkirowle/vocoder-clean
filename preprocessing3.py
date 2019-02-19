@@ -488,7 +488,7 @@ def MLPG_fetch_loss(options):
         return K.mean(K.square(y_pred_mlpg - y_true_mlpg), axis=-1)
     return MLPG_loss
 
-def evaluate_validation(model,options,sbin,validation_size):
+def evaluate_validation(model,options,sbin,validation_size,label):
     """
     Parameters:
     --------------
@@ -496,7 +496,7 @@ def evaluate_validation(model,options,sbin,validation_size):
     options["save_dir"] - where to get the normaliser object from
     options["k"] - which fold to use
     options["batch_size"] - size of the validation set
-    pa
+    label - which dataset
     sbin - cepstral bin size
 
     Return
@@ -508,11 +508,13 @@ def evaluate_validation(model,options,sbin,validation_size):
 
     # Full validation set is compared, so first we infer size
     
-    val_gen = data_loader.DataGenerator(options,False,False)
+    val_gen = data_loader.DataGenerator(options,False,False, )
     sp_test_hat = model.predict_generator(val_gen)
 
     options["batch_size"] = sp_test_hat.shape[0]
-    val_gen = data_loader.DataGenerator(options,False,False)
+
+    val_gen = data_loader.DataGenerator(options,False,True,False,False,
+                                        label=label)
 
     _, sp_test = val_gen.__getitem__(0)
 
@@ -525,10 +527,11 @@ def evaluate_validation(model,options,sbin,validation_size):
                                           sbin,
                                           scaler_sp)
 
-    sp_test_u = np.copy(sp_test_hat)    
+    sp_test_u = np.copy(sp_test_hat)
+    sp_test_hat_u = np.copy(sp_test_hat)
     for i in range(len(scaler_sp)):
         sp_test_u[:,:,i] = scaler_sp[i].inverse_transform(sp_test[:,:,i])
-
+        sp_test_hat_u[:,:,i] = scaler_sp[i].inverse_transform(sp_test_hat[:,:,i])
 
     f0 = data_loader.load_puref0(options["save_dir"],
                              options["k"]).astype(np.float64)
@@ -536,7 +539,12 @@ def evaluate_validation(model,options,sbin,validation_size):
    # resynth_length = []
     #for id in range(N):
      #   resynth_length.append(len(np.trim_zeros(f0[id,:],'b')))
-    
+    for i in range(sp_test_hat.shape[0]):
+        plt.plot(sp_test_hat[i,:,1])
+        plt.plot(sp_test_hat_u[i,:,1])
+        plt.plot(mlpg_generated[i,:,1])
+        plt.plot(sp_test_u[i,:,1])
+        plt.show()
     mcd = melcd(mlpg_generated,sp_test_u[:,:,:sbin])
 
     return mcd
