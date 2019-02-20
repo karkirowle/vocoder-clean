@@ -61,6 +61,7 @@ def my_main(_config,_run):
         model = model_conv.LSTM_Model(options)
     if args.trans:
         model = transfer_blstm.LSTM_Model(options)
+    cb = call_shed.fetch_callbacks(options,_run,learning_curve)
     if args.lstm_conv:
         model = model_lstm_conv.LSTM_Model(options)
     if args.bi_gru:
@@ -75,12 +76,15 @@ def my_main(_config,_run):
                           loss="mse",
                           sample_weight_mode="temporal")
 
+    cb = call_shed.fetch_callbacks(options,_run,learning_curve)
+
     if args.train:
         try:
 
             model.trainer.fit_generator(generator=train_gen,
                                         validation_data = val_gen,
-                                        epochs=options["epochs"])
+                                        epochs=options["epochs"],
+                                        callbacks = cb)
 
         except KeyboardInterrupt:
             print("Training interrupted")
@@ -110,7 +114,8 @@ def my_main(_config,_run):
         try:
             model.fit_generator(generator=train_gen,
                                         validation_data = val_gen,
-                                        epochs=options["epochs"])
+                                        epochs=options["epochs"],
+                                callbacks = cb)
         except KeyboardInterrupt:
             print("Training interrupted")
 
@@ -163,7 +168,7 @@ if __name__ == "__main__":
         "experiment" : args.experiment,
         "lr": args.lr, # 0.003 # not assigned in Takuragi paper
         "clip": 5,
-        "epochs": 50, #60
+        "epochs": 1, #60
         "bins_1": 41,
         "gru": 128,
         "seed": 25, #10
