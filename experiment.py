@@ -125,7 +125,7 @@ if __name__ == "__main__":
                                               "d9", "d10", "d11", "d12"])
     parser.add_argument('--batch', type=int)
     parser.add_argument('--lr', type=float)
-    parser.add_argument('--shift', type=int)
+    parser.add_argument('--shift', action="store_true")
     parser.add_argument('--experiment', type=str)
     args = parser.parse_args()
 

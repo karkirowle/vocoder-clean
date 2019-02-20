@@ -38,7 +38,6 @@ def my_main(_config,_run):
     options = _config
 
     swap = False
-    shift = True
 
     if args.f0:
         channel_idx = np.array([0,1,2,3,4,5,6,7,10,11,12,13,14])
@@ -49,8 +48,8 @@ def my_main(_config,_run):
 
     # PRESET - Training on all data is not determined externally
     options["batch_size"] = 50
-    train_gen = data_loader.DataGenerator(options,True,True,swap,shift,label="all")
-    val_gen = data_loader.DataGenerator(options,False,True,swap,shift,label="all")
+    train_gen = data_loader.DataGenerator(options,True,True,swap,args.shift,label="all")
+    val_gen = data_loader.DataGenerator(options,False,True,swap,args.shift,label="all")
 
     options["num_features"] = train_gen.in_channel
     options["out_features"] = train_gen.out_channel
@@ -94,9 +93,9 @@ def my_main(_config,_run):
         # ----------- STEP 2 - Train on only mngu0 -----------------------
         # PRESET - Training on special data determined externally
         options["batch_size"] = args.batch
-        train_gen = data_loader.DataGenerator(options,True,True,swap,shift,
+        train_gen = data_loader.DataGenerator(options,True,True,swap,args.shift,
                                               label=args.dataset)
-        val_gen = data_loader.DataGenerator(options,False,True,swap,shift,
+        val_gen = data_loader.DataGenerator(options,False,True,swap,args.shift,
                                             label=args.dataset)
 
 
@@ -151,7 +150,7 @@ if __name__ == "__main__":
                                               "d9", "d10", "d11", "d12"])
     parser.add_argument('--batch', type=int)
     parser.add_argument('--lr', type=float)
-    parser.add_argument('--shift', type=int)
+    parser.add_argument('--shift', action="store_true")
     parser.add_argument('--experiment', type=str)
     args = parser.parse_args()
 
