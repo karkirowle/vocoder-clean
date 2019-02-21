@@ -23,6 +23,7 @@
     "tab:electrodes"
     "tab:example"
     "nnexperiment"
+    "tab:transfer"
     "eq1"
     "eq2"
     "eq3"

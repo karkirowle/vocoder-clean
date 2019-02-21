@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2018.10.14)  19 FEB 2019 16:11
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2018.10.14)  21 FEB 2019 14:54
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -649,6 +649,9 @@ LaTeX Warning: Label `tab:example' multiply defined.
 
 LaTeX Warning: Label `tab:example' multiply defined.
 
+
+LaTeX Warning: Label `tab:example' multiply defined.
+
 )
 \openout1 = `template.aux'.
 
@@ -769,28 +772,28 @@ File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
 )
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <9> not available
 (Font)              Font shape `OT1/ptm/b/n' tried instead on input line 30.
-LaTeX Font Info:    Try loading font information for TS1+ptm on input line 109.
+LaTeX Font Info:    Try loading font information for TS1+ptm on input line 107.
 
 
 (/usr/share/texlive/texmf-dist/tex/latex/psnfss/ts1ptm.fd
 File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
 )
-Underfull \hbox (badness 4366) in paragraph at lines 114--116
+Underfull \hbox (badness 4366) in paragraph at lines 112--114
 []\OT1/ptm/m/n/9 Our code is also avail-able as a Github repos-i-tory
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 114--116
+Underfull \hbox (badness 10000) in paragraph at lines 112--114
 \OT1/ptm/m/n/9 on the link $\OT1/pcr/m/n/9 https : / / github . com / karkirowl
 e /
  []
 
 
-Package caption Warning: \label without proper reference on input line 130.
+Package caption Warning: \label without proper reference on input line 128.
 See the caption package documentation for explanation.
 
 
-LaTeX Warning: Reference `tab:electrodes' on page 1 undefined on input line 127
+LaTeX Warning: Reference `tab:electrodes' on page 1 undefined on input line 125
 .
 
 (./init_pos.pgf
@@ -811,7 +814,7 @@ Missing character: There is no â in font phvr7t!
 Missing character: There is no ˆ in font phvr7t!
 Missing character: There is no ’ in font phvr7t!
 )
-Overfull \hbox (3.64174pt too wide) in paragraph at lines 152--154
+Overfull \hbox (3.64174pt too wide) in paragraph at lines 150--152
  [] 
  []
 
@@ -821,25 +824,25 @@ Overfull \hbox (3.64174pt too wide) in paragraph at lines 152--154
 
 ]
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <8> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 265.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 263.
 
-Overfull \hbox (8.96846pt too wide) in paragraph at lines 263--279
+Overfull \hbox (8.96846pt too wide) in paragraph at lines 261--277
  [][] 
  []
 
 [2]
-./template.tex:337: Misplaced \noalign.
+./template.tex:378: Misplaced \noalign.
 \bottomrule ->\noalign 
                        {\ifnum 0=`}\fi \@aboverulesep =\aboverulesep \global...
-l.337     \bottomrule
+l.378     \bottomrule
                      
 I expect to see \noalign only after the \cr of
 an alignment. Proceed, and I'll ignore this case.
 
-./template.tex:338: Missing } inserted.
+./template.tex:379: Missing } inserted.
 <inserted text> 
                 }
-l.338 
+l.379 
       
 I've inserted something that you may have forgotten.
 (See the <inserted text> above.)
@@ -847,10 +850,10 @@ With luck, this will get me unwedged. But if you
 really didn't forget anything, try typing `2' now; then
 my insertion and my current dilemma will both disappear.
 
-./template.tex:338: Missing } inserted.
+./template.tex:379: Missing } inserted.
 <inserted text> 
                 }
-l.338 
+l.379 
       
 I've inserted something that you may have forgotten.
 (See the <inserted text> above.)
@@ -858,10 +861,10 @@ With luck, this will get me unwedged. But if you
 really didn't forget anything, try typing `2' now; then
 my insertion and my current dilemma will both disappear.
 
-./template.tex:338: Missing } inserted.
+./template.tex:379: Missing } inserted.
 <inserted text> 
                 }
-l.338 
+l.379 
       
 I've inserted something that you may have forgotten.
 (See the <inserted text> above.)
@@ -869,26 +872,26 @@ With luck, this will get me unwedged. But if you
 really didn't forget anything, try typing `2' now; then
 my insertion and my current dilemma will both disappear.
 
-./template.tex:338: Missing \cr inserted.
+./template.tex:379: Missing \cr inserted.
 <inserted text> 
                 \cr 
-l.338 
+l.379 
       
 I'm guessing that you meant to end an alignment here.
 
-./template.tex:338: Missing { inserted.
+./template.tex:379: Missing { inserted.
 <inserted text> 
                 {
-l.338 
+l.379 
       
 I've put in what seems to be necessary to fix
 the current column of the current alignment.
 Try to go on, since this might almost work.
 
-./template.tex:338: Undefined control sequence.
+./template.tex:379: Undefined control sequence.
 \@BTrule ...\doublerulesep \fi \fi \fi \@BTswitch 
                                                   
-l.338 
+l.379 
       
 The control sequence at the end of the top line
 of your error message was never \def'ed. If you have
@@ -896,10 +899,10 @@ misspelled it (e.g., `\hobx'), type `I' and the correct
 spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
-./template.tex:340: Misplaced \crcr.
+./template.tex:381: Misplaced \crcr.
 <recently read> \crcr 
                       
-l.340   \end{tabular}
+l.381   \end{tabular}
                      
 I can't figure out why you would want to use a tab mark
 or \cr or \span just now. If something like a right brace
@@ -907,10 +910,10 @@ up above has ended a previous alignment prematurely,
 you're probably due for more error messages, and you
 might try typing `S' now just to see what is salvageable.
 
-./template.tex:340: Extra }, or forgotten $.
+./template.tex:381: Extra }, or forgotten $.
 \endtabular ->\crcr \egroup \egroup 
                                     $\egroup 
-l.340   \end{tabular}
+l.381   \end{tabular}
                      
 I've deleted a group-closing symbol because it seems to be
 spurious, as in `$x}$'. But perhaps the } is legitimate and
@@ -919,21 +922,17 @@ the way to recover is to insert both the forgotten and the
 deleted material, e.g., by typing `I$}'.
 
 
-Overfull \hbox (15.39276pt too wide) in paragraph at lines 321--341
+Overfull \hbox (15.39276pt too wide) in paragraph at lines 362--382
  [][] 
  []
 
-
-Underfull \vbox (badness 1755) has occurred while \output is active []
-
-
-(./retraining.pgf)
-Overfull \hbox (3.64174pt too wide) in paragraph at lines 443--445
+[3] (./retraining.pgf)
+Overfull \hbox (3.64174pt too wide) in paragraph at lines 484--486
  [] 
  []
 
-[3] (./retraining_linear.pgf)
-Overfull \hbox (3.64174pt too wide) in paragraph at lines 471--473
+(./retraining_linear.pgf)
+Overfull \hbox (3.64174pt too wide) in paragraph at lines 512--514
  [] 
  []
 
@@ -948,10 +947,10 @@ LaTeX Warning: There were multiply-defined labels.
 
  ) 
 Here is how much of TeX's memory you used:
- 16914 strings out of 492982
- 348487 string characters out of 6134895
- 2757202 words of memory out of 5000000
- 20097 multiletter control sequences out of 15000+600000
+ 16915 strings out of 492982
+ 348501 string characters out of 6134895
+ 2756109 words of memory out of 5000000
+ 20098 multiletter control sequences out of 15000+600000
  39121 words of font info for 88 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  55i,10n,67p,451b,780s stack positions out of 5000i,500n,10000p,200000b,80000s
@@ -971,7 +970,7 @@ live/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></usr/share/texlive/texmf-di
 st/fonts/type1/urw/helvetic/uhvr8a.pfb></usr/share/texlive/texmf-dist/fonts/typ
 e1/urw/times/utmb8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/ut
 mr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on template.pdf (5 pages, 393085 bytes).
+Output written on template.pdf (5 pages, 394141 bytes).
 PDF statistics:
  92 PDF objects out of 1000 (max. 8388607)
  67 compressed objects within 1 object stream

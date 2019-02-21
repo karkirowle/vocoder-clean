@@ -86,7 +86,9 @@ speech.
 The conclusion of these endeavours were that while it is possible to
 predict some of the pitch from articulation, the quality suffers.
 It is, however, possible to obtain satisfactory values for the
-spectral quality.
+cepstral quality.
+
+
 
 In the author's broader research, the aim is to demonstrate how pathologies in
 articulation are translated to speech. In some types of pathological
@@ -95,14 +97,10 @@ remains unchanged. This means, by knowing the original pitch and the
 pathological deviations in articulation, it should be possible to
 synthetise pathological speech.
 
-Furthermore, based on the principles of the source-filter model, neural
-network based speech synthesis should then have the \( F_0 \) on the
-input side of the model, rather than as a predicted value. This separates
-source information (excitation and articulation) from the effect (speech)
-and the neural network can then be looked as a function approximator
-for a dynamic area function.
-
-
+The idea with MFCCs is to separate vocal tract information from the excitation
+information. Thus based on the electrode signals of the vocal tract configuration
+it should be possible to predict part of the spectra only dependent on the vocal
+tract configuration.
 
 The main contributions of this paper are,
 \begin{itemize}
@@ -308,9 +306,52 @@ is reasonable to assume that this does pre-processing of the time-series.
 It can be easily seen mathematically that after after the last LSTM layer, a fully connected layer is also needed as this acts as a linear regression based on the LSTM parameters. This is because the range of the activation function is not sufficient to capture the range of the normalised MFCCs. It is possible to introduce some structural bias by using the same linear regression from each frame, somewhat limiting complexity. 
 
 In terms of the optimisation, Adam and Graves's RMSProp is preferred, which is not surpsing due to the
-fact that these known to be better for optimising non-stationary objectives. With the SGD, finicky
-learning rate scheduling had to be used.
+fact that these known to be better for optimising non-stationary objectives. With the SGD,
+learning rate scheduling had to be used. 
 
+In order to choose the best architecture, all of them have been reimplemented with slight modifications.
+This is a better practice, because the MCD's were interpreted differently on the different papers, i.e the error in the silence frames were not taken into consideration. All of them were compared on the mngu0 dataset. The best performing architecture have been retrained on the full dataset, using the preprocessing techniques mentioned above, and an MCD of 5.48 have been obtained.
+
+
+A possible approach is to use transfer learning to get better performance.
+
+The idea is either to freeze the initial model trained on the mngu0, then use pre-processing
+layers to learn the feature mappings. 
+Some valid questions: generalisation by validating on certaind datasets.
+
+\begin{table}[th]
+  \caption{Transfer learning comparison with single speaker models}
+  \label{tab:transfer}
+  \centering
+  \footnotesize
+
+  \begin{tabular}{ r r r}
+    \toprule
+    \textbf{Dataset} & \textbf{Speaker only} & \textbf{Transfer} \\
+    \midrule
+    \textbf{MNGU0} & 4.77 dB & N/A \\
+    \textbf{Female MOCHA-TIMIT} & 5.23 dB & S \\
+    \textbf{Male MOCHA-TIMIT} & 5.88 dB & S \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[th]
+  \caption{Held out validation for different architectures on MNGU0}
+  \label{tab:example}
+  \centering
+  \footnotesize
+
+  \begin{tabular}{ r r r r }
+    \toprule
+    \textbf{Author} & \textbf{MCD} \\
+    \midrule
+    \textbf{Gonzalez} & 4.77 dB \\
+    \textbf{Taguchi} & 7.28 dB \\
+    \textbf{Liu} & 4.84 dB \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \begin{table}[th]
   \caption{Comparison of different trainng methods}
@@ -330,7 +371,7 @@ learning rate scheduling had to be used.
     \textbf{Learning rate} & 0.01* & 0.01 & 0.003 \\
     \textbf{Gradient clipping} & No & 5 & No \\
     \textbf{Early stopping} & Yes & Yes & Yes \\
-    \textbf{MLPG} & Yes & No & Yes \\ 
+    \textbf{MLPG} & No & Yes & Yes \\ 
     \textbf{Maximum epochs} & 32 & N/A & 100 \\
     \textbf{Batch size} & N/A & 8 & 100 \\
     \textbf{Incremental training} & No & Yes & Yes
