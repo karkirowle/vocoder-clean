@@ -50,7 +50,7 @@ def my_main(_config,_run):
                                           args.shift,label="mngu0")
     val_gen = data_loader.DataGenerator(options,False,True,swap,
                                         args.shift,label="mngu0")
-
+    
     options["num_features"] = train_gen.in_channel
     options["out_features"] = train_gen.out_channel
     
@@ -82,8 +82,11 @@ def my_main(_config,_run):
                                    str(options["k"]) +
                                    ".hdf5")
 
-        print("this works?")
-        print(model.transfer)
+        options2 = options
+        options2["batch_size"] = 30
+        MCD_all = proc.evaluate_validation(model.trainer,options2,41,"mngu0")
+        print("MCD (dB) (nmkwii)" + str(MCD_all))
+
         # ----------- STEP 2 - Train on only chosen dataset ----------
         # PRESET - Training on special data determined externally
         options["batch_size"] = 30

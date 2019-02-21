@@ -103,8 +103,24 @@ def my_main(_config,_run):
     
     options2 = options
     options2["batch_size"] = 30
-    MCD_all = proc.evaluate_validation(model,options2,41,args.dataset)
-    print("MCD (dB) (nmkwii)" + str(MCD_all))
+
+    if validate_ind:
+        MCD_all = proc.evaluate_validation(model,options2,41,args.dataset)
+    else:
+        MCD_all = proc.evaluate_validation(model,options2,41,"mngu0")
+        MCD_all = proc.evaluate_validation(model,options2,41,"male")
+        MCD_all = proc.evaluate_validation(model,options2,41,"female")
+        MCD_all = proc.evaluate_validation(model,options2,41,"d3")
+        MCD_all = proc.evaluate_validation(model,options2,41,"d5")
+        MCD_all = proc.evaluate_validation(model,options2,41,"d6")
+        MCD_all = proc.evaluate_validation(model,options2,41,"d7")
+        MCD_all = proc.evaluate_validation(model,options2,41,"d8")
+        MCD_all = proc.evaluate_validation(model,options2,41,"d9")
+        MCD_all = proc.evaluate_validation(model,options2,41,"d10")
+        MCD_all = proc.evaluate_validation(model,options2,41,"d11")
+        MCD_all = proc.evaluate_validation(model,options2,41,"d12")
+        print("MCD (dB) (nmkwii)" + str(MCD_all))
+    else 
     return MCD_all
 
 if __name__ == "__main__":
@@ -123,6 +139,7 @@ if __name__ == "__main__":
                                               "female", "d3", "d4",
                                               "d5", "d6", "d7", "d8",
                                               "d9", "d10", "d11", "d12"])
+    parser.add_argument("--validate_ind", action="store_true")
     parser.add_argument('--batch', type=int)
     parser.add_argument('--lr', type=float)
     parser.add_argument('--shift', action="store_true")

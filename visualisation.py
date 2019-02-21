@@ -72,14 +72,17 @@ def visualise(args):
     blstm2 = act.get('bidirectional_2/concat_2:0')
     blstm3 = act.get('bidirectional_3/concat_2:0')
     blstm4 = act.get('bidirectional_4/concat_2:0')
-    plt.imshow(blstm1[0,:,:].T)
-    plt.show()
-    plt.imshow(blstm2[0,:,:].T)
-    plt.show()
-    plt.imshow(blstm3[0,:,:].T)
-    plt.show()
-    plt.imshow(blstm4[0,:,:].T)
-    plt.show()
+    blstms = [blstm1, blstm2, blstm3, blstm4]
+    
+    fig = plt.figure(num=1, figsize=(4.2,4.2), dpi=80, facecolor="w", edgecolor="k")
+
+    for i,blstm in enumerate(blstms):
+        plt.subplot(2,2,i+1)
+        im = plt.imshow(blstm[0,:,:].T,cmap="hot", aspect="auto")
+        fig.colorbar(im)
+        plt.title("Layer " + str(i))
+    #plt.show()
+    plt.savefig("paper/blstm_act.pgf")
 
     intervals = [0,80,100,140,180]
 
