@@ -488,7 +488,6 @@ def fetch_validation_size(options,label,model):
     # Run predictions for all minibatch
     # which fill infer the full batch size 
     sp_test_hat = model.predict_generator(val_gen)
-
     validation_size = sp_test_hat.shape[0]
     return validation_size
 

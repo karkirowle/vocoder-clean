@@ -104,23 +104,16 @@ def my_main(_config,_run):
     options2 = options
     options2["batch_size"] = 30
 
-    if validate_ind:
-        MCD_all = proc.evaluate_validation(model,options2,41,args.dataset)
+    datasets = ["mngu0","male","female","d3","d4","d5","d6","d7","d8",
+                "d9","d10","d11","d12"]
+    if args.validate_ind:
+        for dataset in datasets:
+            options2["batch_size"] = 10
+            MCD_all = proc.evaluate_validation(model,options2,41,dataset)
+            print("MCD (dB) (" + str(dataset) + ")" + str(MCD_all))
     else:
-        MCD_all = proc.evaluate_validation(model,options2,41,"mngu0")
-        MCD_all = proc.evaluate_validation(model,options2,41,"male")
-        MCD_all = proc.evaluate_validation(model,options2,41,"female")
-        MCD_all = proc.evaluate_validation(model,options2,41,"d3")
-        MCD_all = proc.evaluate_validation(model,options2,41,"d5")
-        MCD_all = proc.evaluate_validation(model,options2,41,"d6")
-        MCD_all = proc.evaluate_validation(model,options2,41,"d7")
-        MCD_all = proc.evaluate_validation(model,options2,41,"d8")
-        MCD_all = proc.evaluate_validation(model,options2,41,"d9")
-        MCD_all = proc.evaluate_validation(model,options2,41,"d10")
-        MCD_all = proc.evaluate_validation(model,options2,41,"d11")
-        MCD_all = proc.evaluate_validation(model,options2,41,"d12")
+        MCD_all = proc.evaluate_validation(model,options2,41,args.dataset)
         print("MCD (dB) (nmkwii)" + str(MCD_all))
-    else 
     return MCD_all
 
 if __name__ == "__main__":
@@ -154,7 +147,7 @@ if __name__ == "__main__":
         "experiment" : args.experiment,
         "lr": 0.003, #0.001 # 0.003 # not assigned in Takuragi paper
         "clip": 5,
-        "epochs": 100, #60
+        "epochs": 1, #60
         "bins_1": 41,
         "gru": 128,
         "seed": 25, #10
