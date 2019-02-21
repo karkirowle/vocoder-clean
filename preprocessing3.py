@@ -466,29 +466,32 @@ def mlpg_postprocessing(mfcc, bins_1, scaler_sp):
     
     return mlpg_generated
 
-def MLPG_fetch_loss(options):
-    def MLPG_loss(y_true, y_pred):
-        """
-        Parameters:
-        -----------
-        y_true - ground truth static-delta features (N,B,T)
-        y_pred - neural network predicted static-delta features (N,B,T)
-        options - option dicionary containing savedir and bins_1
-        Returns:
-        --------
-        the mean squared error loss between the generated static features
-        """
-        bins_1 = options["bins_1"]
-        save_dir = options["save_dir"]
+def fetch_validation_size(options,label,model):
+    """
+    Parameters:
+    -----------
+    options - every option needed for the data loader
+    label - which dataset 
+    model - model we trained our dataset with 
+    Returns:
+    --------
+    size of the validation set
+    """
+    # Unshuffled, unswapped validation set
+    val_gen = data_loader.DataGenerator(options,
+                                        False,
+                                        False,
+                                        False,
+                                        False,
+                                        label=label)
 
-        scaler_sp = joblib.load(save_dir + '/scaler_sp_.pkl')
+    # Run predictions for all minibatch
+    # which fill infer the full batch size 
+    sp_test_hat = model.predict_generator(val_gen)
+    validation_size = sp_test_hat.shape[0]
+    return validation_size
 
-        y_true_mlpg = mlpg_postprocessing(y_true,bins_1,scaler_sp)
-        y_pred_mlpg = mlpg_postprocessing(y_pred,bins_1,scaler_sp)
-        return K.mean(K.square(y_pred_mlpg - y_true_mlpg), axis=-1)
-    return MLPG_loss
-
-def evaluate_validation(model,options,sbin,validation_size,label):
+def evaluate_validation(model,options,sbin,label):
     """
     Parameters:
     --------------
@@ -507,18 +510,14 @@ def evaluate_validation(model,options,sbin,validation_size,label):
     """
 
     # Full validation set is compared, so first we infer size
-    
+
+    N = fetch_validation_size(options,label,model)
+    options["batch_size"] = N
     val_gen = data_loader.DataGenerator(options,False,False,False,False,
                                         label=label)
+    sp_train, sp_test, _ = val_gen.__getitem__(0)
     sp_test_hat = model.predict_generator(val_gen)
 
-    options["batch_size"] = sp_test_hat.shape[0]
-    val_gen = data_loader.DataGenerator(options,False,False,False,False,
-                                        label=label)
-
-    sp_train, sp_test, _ = val_gen.__getitem__(0)
-
-    N = sp_test.shape[0]
     scaler_sp = joblib.load(options["save_dir"] + '/scaler_sp_.pkl')
 
     # Perform MLPG
@@ -526,23 +525,15 @@ def evaluate_validation(model,options,sbin,validation_size,label):
                                           sbin,
                                           scaler_sp)
 
+    # Perform destandardisation
     sp_test_u = np.copy(sp_test_hat)
     sp_test_hat_u = np.copy(sp_test_hat)
     for i in range(len(scaler_sp)):
         sp_test_u[:,:,i] = scaler_sp[i].inverse_transform(sp_test[:,:,i])
         sp_test_hat_u[:,:,i] = scaler_sp[i].inverse_transform(sp_test_hat[:,:,i])
 
-    f0 = data_loader.load_puref0(options["save_dir"],
-                             options["k"]).astype(np.float64)
-    print(N)
-        
-        #plt.show()
     mcd = melcd(mlpg_generated,sp_test_u[:,:,:sbin])
-
     return mcd
-
-def exp_func(x,a,b,c):
-    return a*np*exp(-b*x) + c
 
 def f0_process(f0,linear=True):
     """

@@ -103,8 +103,17 @@ def my_main(_config,_run):
     
     options2 = options
     options2["batch_size"] = 30
-    MCD_all = proc.evaluate_validation(model,options2,41,617,args.dataset)
-    print("MCD (dB) (nmkwii)" + str(MCD_all))
+
+    datasets = ["mngu0","male","female","d3","d4","d5","d6","d7","d8",
+                "d9","d10","d11","d12"]
+    if args.validate_ind:
+        for dataset in datasets:
+            options2["batch_size"] = 10
+            MCD_all = proc.evaluate_validation(model,options2,41,dataset)
+            print("MCD (dB) (" + str(dataset) + ")" + str(MCD_all))
+    else:
+        MCD_all = proc.evaluate_validation(model,options2,41,args.dataset)
+        print("MCD (dB) (nmkwii)" + str(MCD_all))
     return MCD_all
 
 if __name__ == "__main__":
@@ -123,6 +132,7 @@ if __name__ == "__main__":
                                               "female", "d3", "d4",
                                               "d5", "d6", "d7", "d8",
                                               "d9", "d10", "d11", "d12"])
+    parser.add_argument("--validate_ind", action="store_true")
     parser.add_argument('--batch', type=int)
     parser.add_argument('--lr', type=float)
     parser.add_argument('--shift', action="store_true")
@@ -137,7 +147,7 @@ if __name__ == "__main__":
         "experiment" : args.experiment,
         "lr": 0.003, #0.001 # 0.003 # not assigned in Takuragi paper
         "clip": 5,
-        "epochs": 100, #60
+        "epochs": 1, #60
         "bins_1": 41,
         "gru": 128,
         "seed": 25, #10
