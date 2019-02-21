@@ -38,13 +38,23 @@ def delay_signal(signal,delay):
                                 mode="constant")[:,:-delay,:]
     return delayed_signal
 
-def load_puref0(save_dir,k):
+def load_puref0(save_dir,k,label):
     """
     Loads just the unprocessed f0 values for testing
     """
-    
+
+    # Load the full validation set for each k
     test_idx = np.load(save_dir + "/val_idx_.npy")
-    test_idx = test_idx[k]
+
+    # Load the category idx
+    cat_id = np.load(save_dir + "/cat_id.npy")
+
+    # Select category AND validation
+    if label == "all":
+        test_idx = test_idx[k]
+    else:
+        test_idx = np.intersect1d(test_idx[k],
+                                       cat_id.item()[label])
 
     # Infer the dataset size run-time
     example = np.load(save_dir + "/puref0set_1.npy")
@@ -67,7 +77,7 @@ def load_scalersp(save_dir):
     """
     return joblib.load(save_dir + "/scaler_sp_.pkl")
 
-def load_bap(save_dir,k):
+def load_bap(save_dir,k,label):
     """
     Loads unnormalised band aperiodicites
 
@@ -76,8 +86,18 @@ def load_bap(save_dir,k):
     save_dir - diretory to load data from
 
     """
+    # Load the full validation set for each k
     test_idx = np.load(save_dir + "/val_idx_.npy")
-    test_idx = test_idx[k]
+
+    # Load the category idx
+    cat_id = np.load(save_dir + "/cat_id.npy")
+
+    # Select category AND validation
+    if label == "all":
+        test_idx = test_idx[k]
+    else:
+        test_idx = np.intersect1d(test_idx[k],
+                                       cat_id.item()[label])
 
     # Infer the dataset size run-time
     example = np.load(save_dir + "/apset_1.npy")
@@ -134,7 +154,6 @@ class DataGenerator(keras.utils.Sequence):
         self.shift = shift
         self.swap = swap
         self.channel_idx = channel_idx
-
         cat_id = np.load(self.save_dir + "/cat_id.npy")
         Xtemp = np.load(self.save_dir + "/dataset_" + str(1) + '.npy')
 
@@ -215,6 +234,7 @@ class DataGenerator(keras.utils.Sequence):
         # Initialization
         X = np.empty((self.batch_size, self.T, self.in_channel))
         Y = np.empty((self.batch_size, self.T, self.out_channel))
+
         weights = np.zeros((self.batch_size, self.T))
         random_delay = np.random.random_integers(0,100)
 

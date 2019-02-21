@@ -103,7 +103,7 @@ def my_main(_config,_run):
     
     options2 = options
     options2["batch_size"] = 30
-    MCD_all = proc.evaluate_validation(model,options2,41,617,args.dataset)
+    MCD_all = proc.evaluate_validation(model,options2,41,args.dataset)
     print("MCD (dB) (nmkwii)" + str(MCD_all))
     return MCD_all
 
