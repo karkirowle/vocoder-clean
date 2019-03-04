@@ -92,8 +92,46 @@ def zero_interval(dataset,begin,end):
     
     return path_test
 
-def zero_channel(dataset,channel_num):
-    path_test = dataset
-    path_test[:,:,channel_num] = 0
+def set_channel(dataset,value,channel_num):
+    path_test = np.copy(dataset)
+    path_test[:,:,channel_num] = value
 
     return path_test
+
+
+def add_noise(dataset,channel_num):
+    path_test = np.copy(dataset)
+    path_test[:,:,channel_num] = path_test[:,:,channel_num]
+    + np.random.normal(0,10,path_test[:,:,channel_num].shape)
+
+    return path_test
+
+def delay_signal(signal,delay,channel_idx):
+    """
+    Wrapper for numpy boilerplate for delaying the signal.
+    The idea is that signal can be delay by shifting and zero padding
+    in the beginning.
+    
+
+    Parameters:
+    -----------
+    signal: The signal isassumed to be tensors of either
+    - 3D (Sample X Time x Channel)
+
+    Returns:
+    --------
+    delayed_signal: the delayed signal same shape as signal
+    """
+
+    assert len(signal.shape) == 3, "Invalid signal shape"
+    assert delay >= 0, "Only positive delay could be applied"
+
+    if (delay == 0):
+        return signal
+
+    delayed_signal = np.copy(signal)
+    delayed_signal[:,:,channel_idx] = np.pad(signal[:,:,channel_idx],
+                            ((0,0),(delay,0),(0,0)),
+                            mode="constant")[:,:-delay,:]
+
+    return delayed_signal

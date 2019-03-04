@@ -104,7 +104,7 @@ def my_main(_config,_run):
     options2 = options
     options2["batch_size"] = 30
 
-    datasets = ["mngu0","male","female","d3","d4","d5","d6","d7","d8",
+    datasets = ["all","mngu0","male","female","d3","d4","d5","d6","d7","d8",
                 "d9","d10","d11","d12"]
     if args.validate_ind:
         for dataset in datasets:
