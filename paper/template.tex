@@ -13,8 +13,7 @@
 \tikzstyle{output} = [coordinate]
 \tikzstyle{pinstyle} = [pin edge={to-,thin,black}]
 
-\title{Multi-speaker articulatory-to-acoustic speech synthesis with
-deep neural networks}
+\title{Pathological speech synthesis from articulation}
 \name{Bence Halpern$^1$$^2$, Rob J. J. H. van Son$^1$, Michiel W. M.
   van den Brekel$^1$$^2$}
 %The maximum number of authors in the author list is twenty. If the number of contributing authors is more than twenty, they should be listed in a footnote or in acknowledgement section, as appropriate.
@@ -64,7 +63,7 @@ articulation are translated to speech. In some types of pathological
 speech the laryngeal function remains intact, meaning the \( F_0 \)
 remains unchanged. This means, by knowing the original pitch and the
 pathological deviations in articulation, it should be possible to
-synthetise Pathological speech.
+synthetise pathological speech if the pathology is on the articulation level.
 
 The idea with MFCCs is to seperate vocal tract information from the excitation
 information. Thus based on the electrode signals of the vocal tract configuration
@@ -78,7 +77,6 @@ The main contributions of this paper are,
 \item a set of benchmarks for single-speaker and multi-speaker articulatory to acoustic synthesis
 \item a discussion of what these neural networks learn
 \item an example of how to construct pathological speech using this framework
-\item perceptual testing of these samples rated by a speech-language pathologist
 \end{itemize}
 
 Our code is also available as a Github repository on the link
@@ -104,7 +102,7 @@ In order to deal with the speaker-wise variations, the articulatory trajectories
 the datasets were standardised to have zero mean
 and unit variance on a per speaker basis. While this doesn't alleviate problems if an electrode
 falls of during the experiment, given enough per speaker data it will approximate a distribution
-of tongue movements.
+of articulation movements.
 
 In the case of the TORGO dataset, some of the channels contained spikes, which
 were attached to the dataset. If the spikes happened in electrode channels, which were used
@@ -115,11 +113,11 @@ Previously \cite{Gonzalez2016}, the effect of delay on the
 output signal were investigated. It has been found that delay
 is beneficial in case of causal models. Our choice of function approximators are
 restricted to acausal models, so theoretically a speech sample could be synthetised using
-values from the future. 
+values from the future.
 
 \begin{table}[th]
-  \label{tab:electrodes}
   \caption{Articulatory information recorded in datasets}
+  \label{tab:electrodes}
   \centering
   \begin{tabular}{ r r r  }
     \toprule
@@ -147,28 +145,15 @@ values from the future.
 \subsubsection{Speech data processing}
 
 The total combined dataset contains six British male and three British female speakers, with a total
-of 6117 utterances. The recordings from the microphones were all 16kHz. Only the healthy speech has been included from the TORGO dataset.
-
-\begin{table}[th]
-  \label{tab:electrodes}
-  \caption{Number of datapoints}
-  \centering
-  \begin{tabular}{ r r r r }
-    \toprule
-    / & \textbf{MNGU0} & \textbf{MOCHA-TIMIT} & \textbf{TORGO} \\
-    \midrule
-    \textbf{Utterances} & 1263 & 920 & 3934
-    \bottomrule
-    \end{tabular}
-\end{table}
+of 6117 utterances. The recordings from the microphones were all 16kHz. Only the healthy speech has been included from the TORGO dataset. There are 1263 utterances from the MNGU0, 920 from the MOCHA-TIMIT and 3934 from the TORGO dataset.
 
 Vocoder features were extracted with the PyWORLD vocoder \cite{Morise2016}
 and compressed with the PySPTK toolkit available at \url{http://github.com/r9y9/pysptk}.
 The period between consecutive frames were 5 miliseconds. The resulting 40 MFCC
-and 1 power parameters were used to generatic static and delta parameters,
+and 1 power parameters were used to generate static and delta parameters,
 resulting in 82 parameters for the training. As the first step of the MFCC extraction \( \alpha
 = 0.42 \) were used as a pre-emphasis coefficient. The PyWORLD vocoder
-also provides the $ F_0 $ and BAP values for synthesis. 
+also provides the $ F_0 $ and BAP values, which were not used for training. 
 
 \subsubsection{Sampling}
 
@@ -188,7 +173,7 @@ so there were a total of \( T = 1000 \) samples for each training example.
 For input signals which are shorter, it is assumed that the last part is
 silence, so it is padded with the last element. 
 
-\subsection{Fundamental frequency interpolation}
+\subsubsection{Fundamental frequency interpolation}
 
 Previously, it has been found beneficial to take the logarithm of the
 pitch to obtain a continous \( F_0 \) curve.
@@ -196,52 +181,6 @@ When the logarithm is not defined, linear  interpolatation has been done. \cite{
 An alternative method also exists with exponential interpolation
 which is described in \cite{Chen1997}. It has been decided that the
 linear interpolation technique will be used. 
-
-\subsection{Standardisation}
-
-
-\subsection{Neural network design}
-
-A literature review was carried out to investigate what architectures were used previously
-for this kind of speech synthesis.
-
-Based on \cite{Liu2018}, a bidirectional LSTM was trained with four layers.
-The final layer was a fully connected layer matching the output dimensions.
-This neural network was trained using stochastic gradient descent and
-a learning rate of \( \alpha = 0.01 \).
-
-Another publication \cite{Taguchi} used a neural networks with three fully
-connected layers having 128 hidden units, each layer has a linear activation
-function, which is followed by Layer Normalisation and a sigmoid activation
-function. This is followed by two BLSTM layers with 256 hidden units. Finally,
-a fully connected layer is used. This neural network was trained using Grave's RMSProp (TODO: ref),
-with a learning rate of \( \alpha = 0.01 \) .
-
-Finally, another BGRU was trained based on the architecture of
-\cite{Gonzalez2017}, but using Adam as an optimiser \cite{Kingma2015} and noise regularisation. A summary of these techniques can be seen on \ref{label:architecture}.
-
-Bidirectional RNNs have performed the best on predicting the MFCC spectra in
-all related papers. Taguchi uses fully-connected layers and while it not justified in the paper, it
-is reasonable to assume that this does pre-processing of the time-series.
-
-It can be easily seen mathematically that after the last RNN layer, a fully connected layer is also needed as this acts as a linear regression based on the RNN parameters. This is because the range of the activation function is not sufficient to capture the range of the normalised MFCCs. It is possible to introduce some structural bias by using the same linear regression from each frame, somewhat limiting complexity. 
-
-In terms of the optimisation, Adam and Graves's RMSProp is preferred, which is not surprising due to the
-fact that these known to be better for optimising non-stationary objectives. With the SGD,
-learning rate scheduling had to be used.
-
-In order to choose the best architecture, all of them have been reimplemented with slight modifications.
-This is a better practice, because the MCD's were interpreted differently on the different papers, i.e the error in the silence frames were not taken into consideration. All of them were compared on the mngu0 dataset, the results can be seen in Table  \ref{tab:pilot}. The algorithms
-
-
-To approximate the functional relationship, the authors have decided to
-train a Bidirectional Long-Short Term Memory based neural network \cite{Hochreiter1997}. 
-
-For all BRNN layers, the CuDNNRNN implementation have been used to
-improve efficiency, note that this limits the activation function to be
-stricly \( \text{tanh}(\cdot) \).
-
-
 
 \subsection{Synthesis}
 
@@ -277,7 +216,8 @@ benchmarked.
 \subsection{Neural network experiments} \label{nnexperiment}
 
 Three recurrent neural networks architectures were trained based on previous
-papers tackling similiar problems.
+papers tackling similiar problems. Slight modifications have been made to each
+architecture.
 
 Based on \cite{Liu2018}, a bidirectional LSTM was trained with four layers.
 The final layer was a fully connected layer matching the output dimensions.
@@ -291,8 +231,7 @@ function. This is followed by two BLSTM layers with 256 hidden units. Finally,
 a fully connected layer is used. This neural network was trained using Grave's RMSProp (TODO: ref),
 with a learning rate of \( \alpha = 0.01 \) .
 
-Finally, another BLSTM was trained based on the architecture of
-\cite{Liu2018}, but using Adam as an optimiser \cite{Kingma2015}.
+Finally, a BGRU was trained based on the architecture of \cite{Gonzalez2018} (TODO: check gonzalez ref}.
 
 Determining a good set of architecture and parameter settings is the most difficult part of
 the experiment design. Bidirectional LSTMs have performed the best on predicting the MFCC spectra in
@@ -307,7 +246,6 @@ learning rate scheduling had to be used.
 
 In order to choose the best architecture, all of them have been reimplemented with slight modifications.
 This is a better practice, because the MCD's were interpreted differently on the different papers, i.e the error in the silence frames were not taken into consideration. All of them were compared on the mngu0 dataset.
-
 
 The best performing architecture have been retrained on the full dataset, using the preprocessing techniques mentioned above, and an MCD of 5.48 have been obtained.
 
@@ -403,21 +341,6 @@ Due to the imbalanced dataset this immediately begs the question, how this score
   \end{tabular}
   * with decay after Epoch 11 \\
   ** from author communication
-\end{table}
-\begin{table}[th]
-  \caption{Comparison of different trainng methods}
-  \label{tab:example}
-  \centering
-  \begin{tabular}{ r r r }
-    \toprule
-    \textbf{Architecture} & \textbf{Optimiser} & \textbf{Base learning rate} \\
-    \midrule
-    Liu 2018 & SGD & 0.01 \\
-    Taguchi 2018 & RMSProp & 0.01       \\
-    Modified Liu & Adam & 0.01               \\
-    \bottomrule
-  \end{tabular}
-  
 \end{table}
 
 For training the mean squared error loss function was used, and for
@@ -538,7 +461,13 @@ future experiment design.
 \end{center}
 \end{figure}
 
-\subsection{Ablation study of activations}
+%\subsection{Ablation study of activations}
+\subsection{What do these neural networks learn?}
+
+Based on our training, it seems clear that a GRU architecture was superior to an LSTM
+architecture in our case, when used with a more conventional optimiser.
+General consesus of sequential networks seems to be that sometimes GRU and sometimes LSTM is better
+https://arxiv.org/pdf/1412.3555v1.pdf
 
 The LSTM layers show boundaries in the activation. This indicates that the neural network
 has learned some representation of subword units like phones or phonemes.
