@@ -20,7 +20,8 @@ def derivative_clip(signal,t=0.1,plot_figure=True):
 
     t = 0.1
 
-    ema_4_diff = np.diff(signal)
+    ema_signal = np.copy(signal)
+    ema_4_diff = np.diff(ema_signal)
     ema_4_diff[ema_4_diff > t] = t
     ema_4_diff[ema_4_diff < -t] = -t
     ema_4 = np.cumsum(np.insert(ema_4_diff,0,signal[0]))
@@ -98,12 +99,34 @@ def set_channel(dataset,value,channel_num):
 
     return path_test
 
-
-def add_noise(dataset,channel_num):
+def scale_channel(dataset,value,channel_num):
     path_test = np.copy(dataset)
-    path_test[:,:,channel_num] = path_test[:,:,channel_num]
-    + np.random.normal(0,10,path_test[:,:,channel_num].shape)
+    path_test[:,:,channel_num] = path_test[:,:,channel_num] / value
 
+    plt.subplot(1,2,1)
+    plt.plot(dataset[10,:,4])
+    plt.subplot(1,2,2)
+    plt.plot(path_test[10,:,4])
+    plt.show()
+    
+    return path_test
+
+def add_noise(dataset,noise_val,channel_num):
+    path_test = np.copy(dataset)
+
+    print(path_test[:,:,channel_num].shape)
+
+    print(path_test[10,100,channel_num])
+    path_test[:,:,channel_num] = path_test[:,:,channel_num] + np.random.normal(0,noise_val)
+    print(path_test[10,100,channel_num])
+    
+
+    plt.subplot(1,2,1)
+    plt.plot(dataset[10,:,5])
+    plt.subplot(1,2,2)
+    plt.plot(path_test[10,:,5])
+    plt.show()
+    
     return path_test
 
 def delay_signal(signal,delay,channel_idx):

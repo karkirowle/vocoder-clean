@@ -596,7 +596,7 @@ def preprocess_save_combined(alpha=0.42,
                              normalisation_output = True,
                              channel_number = 14,
                              factor = 80,
-                             save_dir = "processed_comb_test_3_padded"):
+                             save_dir = "processed_comb_test_4_padded"):
     """
     The main entry point to the preprocessing pipeline
 
@@ -628,7 +628,7 @@ def preprocess_save_combined(alpha=0.42,
                  "dataset6/*.pos", "dataset7/*.pos",
                  "dataset8/*.pos", "dataset9/*.pos",
                  "dataset10/*.pos", "dataset11/*pos",
-                 "dataset12/*.pos"]
+                 "dataset12/*.pos", "dataset13/*pos"]
 
         files = np.array([np.array(sorted(glob.glob(path))) for path in paths])
         files = np.concatenate(files)
@@ -665,7 +665,8 @@ def preprocess_save_combined(alpha=0.42,
                "d9": [],
                "d10": [],
                "d11": [],
-               "d12": []}
+               "d12": [],
+               "d13": []}
 
     
     start_calib = []
@@ -687,7 +688,7 @@ def preprocess_save_combined(alpha=0.42,
                 # Resample so the datasets have same sampling frequency
                 data = resample(data,int(np.ceil(data.shape[0]*2/5)))
             shorts = ["d3", "d4", "d5", "d6", "d7", "d8", "d9", "d10",
-                      "d11", "d12"]
+                      "d11", "d12","d13"]
             for short in shorts:
                 if short in fname:
                     cat_id[short].append(k)
@@ -706,6 +707,7 @@ def preprocess_save_combined(alpha=0.42,
         sound_data, fs = sf.read(wav_path)
         if (len(sound_data.shape) == 2):
             sound_data = sound_data[:,1].copy(order='C')
+
         f0, sp, ap = pw.wav2world(sound_data, fs, 5) # 2
 
         
@@ -727,12 +729,11 @@ def preprocess_save_combined(alpha=0.42,
 
         apset[k,:read_in_length,:] = ap[:read_in_length,:]
 
-
     if normalisation_input:
 
         # Normalise the articulographs differently for different references
         cats = ["male", "female", "mngu0","d3","d4","d5","d6","d7",
-                "d8","d9","d10","d11","d12"]
+                "d8","d9","d10","d11","d12","d13"]
         
         # Normalise ema feature wise but do not return normaliser object
         for j in range(channel_number + 1):

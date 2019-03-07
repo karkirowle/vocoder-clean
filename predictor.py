@@ -10,7 +10,7 @@ import pathology
 import preprocessing3 as proc
 import audio
 import data_loader
-
+import itertools
 from keras.models import load_model
 from keras_layer_normalization import LayerNormalization
 
@@ -25,12 +25,12 @@ def synthesis(args):
         "bins_1": 41,
         "bins_2": 1,
         "k": 0,
-        "save_dir": "processed_comb_test_3_padded",
+        "save_dir": "processed_comb_test_4_padded",
         "batch_size": 45,
         "experiment": args.model
     }
     # --------------- LOAD DATA TO TRANSFORM -----------------------------
-    options["batch_size"] = 149
+    options["batch_size"] = 23
     val_gen = data_loader.DataGenerator(options,
                                         False,
                                         False,
@@ -41,8 +41,7 @@ def synthesis(args):
 
     N = X.shape[0]
     T = X.shape[1]
-
-
+    val_gen = None
     # -------------- PATHOLOGICAL SIGNAL PROCESSING ----------------------
 
     # Method 1: Clip derivative
@@ -52,16 +51,18 @@ def synthesis(args):
     #path_test = pathology.upsampling(X,total=6500, channels=[4,9])
 
     # Delay
-    #path_test = pathology.delay_signal(X,100,channel_idx=[4,9])
+    #path_test = pathology.delay_signal(X,10,channel_idx=[4,9])
 
+    path_test = pathology.scale_channel(X,2.5,[2,3,4,5])
 
-    path_test = pathology.set_channel(X,0,[4,5])
+    #path_test = pathology.add_noise(X,3,[4,5])
+    #path_test = pathology.set_channel(X,0,[4,5])
     # Method 3: Zero the channel
     #path_test = pathology.add_noise(X, [4,9])
 
     #
     # Method 3: 
-    #path_test = pathology.derivative_clip_2(X,0.1,[4,5])
+    #path_test = pathology.derivative_clip(X,0.1,[4,5])
 
     # -------------- ARTICULATORY TO ACOUSTIC ----------------------------
 
@@ -71,7 +72,7 @@ def synthesis(args):
                             custom_objects =
                             {'LayerNormalization': LayerNormalization} )
 
-    options["batch_size"] = 149
+    options["batch_size"] = 23
     val_gen = data_loader.DataGenerator(options,
                                         False,
                                         False,
@@ -79,8 +80,10 @@ def synthesis(args):
                                         args.shift,
                                         label=args.dataset)
 
+    A, B, _ = val_gen.__getitem__(0)
 
     mfcc_normalised = mfcc_model.predict_generator(val_gen)
+    print(mfcc_normalised)
     print(mfcc_normalised.shape)
     mfcc_p_normalised = mfcc_model.predict(path_test).astype(np.float64)
     print(mfcc_p_normalised.shape)
@@ -106,20 +109,20 @@ def synthesis(args):
     import sounddevice as sd
     import random
 
-    shuffled = random.sample(range(N), 30)
+    shuffled = random.sample(range(N), 20)
     for i,id in enumerate(shuffled):
 
         resynth_length = len(np.trim_zeros(f0[id,:],'b'))
 
         if resynth_length > 0:
-            fname = "sounds4/normal/" + str(i) + ".wav"
+            fname = "sounds5/normal/" + str(i) + ".wav"
             print(fname)
             sound1 = audio.save_resynth(fname,f0[id,:resynth_length],
                                 mlpg_generated[id,:resynth_length,:],
                                 bap_gt_u[id,:resynth_length,:],
                                 fs=16000,
                                 an=5)
-            fname = "sounds4/pathological/" + str(i) + ".wav"
+            fname = "sounds5/pathological/" + str(i) + ".wav"
 
             sound2 = audio.save_resynth(fname,f0[id,:resynth_length],
                                 mlpg_p_generated[id,:resynth_length,:],
@@ -142,6 +145,7 @@ if __name__ == "__main__":
                                               "d5", "d6",
                                               "d7", "d8",
                                               "d9", "d10",
-                                              "d11", "d12"])
+                                              "d11", "d12",
+                                              "d13"])
     args = parser.parse_args()
     synthesis(args)

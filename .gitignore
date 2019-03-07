@@ -3,6 +3,7 @@ logs/
 sounds/
 sounds2/
 sounds4/
+sounds5/
 dataset/
 dataset2/
 dataset3/
@@ -15,6 +16,7 @@ dataset9/
 dataset10/
 dataset11/
 dataset12/
+dataset13/
 images/
 checkpoints/
 .logs/

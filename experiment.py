@@ -36,7 +36,9 @@ ex = Experiment("run_" + date_string)
 @ex.main
 def my_main(_config,_run):
 
+    
     options = _config
+    options["percentage"] = args.percentage
 
     swap = False
     shift = True
@@ -88,7 +90,7 @@ def my_main(_config,_run):
 
         except KeyboardInterrupt:
             print("Training interrupted")
-
+        
     model = load_model("checkpoints/" + options["experiment"] +
                        str(options["k"]) +
                            ".hdf5",
@@ -99,7 +101,9 @@ def my_main(_config,_run):
         np.save(str(options["percentage"]) +
                 "seed" +
                 str(options["seed"]) +
-                "test" ,learning_curve)
+                "test" +
+                str(options["k"]) +
+                "k",learning_curve)
     
     options2 = options
     options2["batch_size"] = 30
@@ -133,8 +137,10 @@ if __name__ == "__main__":
                                               "d5", "d6", "d7", "d8",
                                               "d9", "d10", "d11", "d12"])
     parser.add_argument("--validate_ind", action="store_true")
+    parser.add_argument("--cv", action="store_true")
     parser.add_argument('--batch', type=int)
     parser.add_argument('--lr', type=float)
+    parser.add_argument('--percentage', type=float)
     parser.add_argument('--shift', action="store_true")
     parser.add_argument('--experiment', type=str)
     args = parser.parse_args()
@@ -154,7 +160,7 @@ if __name__ == "__main__":
         "noise": 0, #?
         "delay": 0, # 25 
         "batch_size": args.batch, #45 # 90 with BLSTM2
-        "percentage": 1,
+        "percentage": args.percentage,
         "k": 0,
         "save_dir": "processed_comb_test_3_padded",
         "save_analysis": True
@@ -165,4 +171,9 @@ if __name__ == "__main__":
 
     ex.add_config(options)
 
-    ex.run()
+    if args.cv:
+        ex.run()
+    else:
+        while ( options["k"] != 10):
+            ex.run()
+            options["k"] = options["k"] + 1
