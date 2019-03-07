@@ -13,14 +13,13 @@
 \tikzstyle{output} = [coordinate]
 \tikzstyle{pinstyle} = [pin edge={to-,thin,black}]
 
-\title{Multi-speaker articulatory-to-acoustic speech synthesis with
-deep neural networks}
+\title{Pathological speech synthesis from articulation}
 \name{Bence Halpern$^1$$^2$, Rob J. J. H. van Son$^1$, Michiel W. M.
   van den Brekel$^1$$^2$}
 %The maximum number of authors in the author list is twenty. If the number of contributing authors is more than twenty, they should be listed in a footnote or in acknowledgement section, as appropriate.
 \address{
   $^1$NKI-AVL, Amsterdam\\
-  $^2$ACLC,University of Amsterdam, The Netherlands}
+  $^2$ACLC, University of Amsterdam, The Netherlands}
 \email{b.halpern@nki.nl, r.v.son@nki.nl}
 
 \begin{document}
@@ -35,42 +34,13 @@ speech synthesis, deep learning, pathological speech
 
 \section{Introduction}
 
-Understading how articulation affects speech is a central question in speech
+Understanding how articulation affects speech is a central question in speech
 research. The source-filter model was one of the first models to tackle this
 problem by noting that speech production could be described by
 the geometry of the vocal tract and the glottal wave. Mathematically,
 the source-filter model synthetises speech by exciting an autoregressive (AR) model with a
 signal, where the AR coefficients capture the geometry of the
 vocal tract, which is also represented by an area function \cite{Benesty2009}. 
-
-\begin{figure}[t]
-  \begin{center}
-    \scalebox{0.75}{
-  \begin{tikzpicture}[auto, node distance=5cm,>=latex']
-    \node [input] (f0) {$F_0$};
-  \node [block, below right = 1 cm and 2 cm of f0] (predictor) { \textbf{Neural network} $f(\mathbf{x}[t], \mathbf{F_0}[t]) $ };
-  \node [input, name=input, right of = predictor] (speech) {Speech};
-    \node [input, below left = 1 cm and 2 cm of predictor] (ema) {};
-    \draw [->] (f0) -- node {$ F_0[t] $}   (predictor.170);
-    \draw [->] (ema) -- node {$ \text{EMA} = \mathbf{x}[t] $}   (predictor.190);
-    \draw [->] (predictor) -- node {$ \text{Speech} = \mathbf{y}[t] $} (speech);
-  \end{tikzpicture}
-}
-
-    \scalebox{0.75}{
-  \begin{tikzpicture}[auto, node distance=5cm,>=latex']
-    \node [input] (f0) {$F_0$};
-  \node [block, right of = f0] (predictor) { \textbf{Vocal tract} $f(\mathbf{x}[t]) $ };
-  \node [input, name=input, right of = predictor] (speech) {Speech};
-    \draw [->] (f0) -- node {$ F_0[t] $}   (predictor);
-    \draw [->] (predictor) -- node {$ \text{Speech} = \mathbf{y}[t] $} (speech);
-  \end{tikzpicture}
- }
- \caption{Black box diagram showing the parallelities of a neural network
-   based model with a source-filter model}
-  \label{fig1}
-    \end{center}
-  \end{figure}
 
 Recently, deep learning methods became popular
 to understand articulation. These methods use a measurement tool,
@@ -88,24 +58,24 @@ predict some of the pitch from articulation, the quality suffers.
 It is, however, possible to obtain satisfactory values for the
 cepstral quality.
 
-
-
 In the author's broader research, the aim is to demonstrate how pathologies in
 articulation are translated to speech. In some types of pathological
 speech the laryngeal function remains intact, meaning the \( F_0 \)
 remains unchanged. This means, by knowing the original pitch and the
 pathological deviations in articulation, it should be possible to
-synthetise pathological speech.
+synthetise pathological speech if the pathology is on the articulation level.
 
-The idea with MFCCs is to separate vocal tract information from the excitation
+The idea with MFCCs is to seperate vocal tract information from the excitation
 information. Thus based on the electrode signals of the vocal tract configuration
 it should be possible to predict part of the spectra only dependent on the vocal
 tract configuration.
 
+In this paper, a technique is described which combines healthy speech from the three largest articulatory dataset, MNGU0, MOCHA-TIMIT and MNGU0 to create a general speaker-independent model. 
+
 The main contributions of this paper are,
 \begin{itemize}
-\item a set of benchmarks for multi-speaker articulatory to acoustic synthesis
-\item estimation on how much data would be needed to construct a better model
+\item a set of benchmarks for single-speaker and multi-speaker articulatory to acoustic synthesis
+\item a discussion of what these neural networks learn
 \item an example of how to construct pathological speech using this framework
 \end{itemize}
 
@@ -113,37 +83,57 @@ Our code is also available as a Github repository on the link
 \url{https://github.com/karkirowle/vocoder-clean}.
 
 \section{Method}
-\subsection{Electromagnetic articulography}
+\subsection{Dataset preprocessing}
+
+\subsubsection{Electrode preprocessing}
 
 Electromagnetic articulography (EMA) is a measurement technology which uses
-sensor coils which are placed on the different articulators in the vocal tract.
+sensor coils which are placed on the articulators of the vocal tract.
 Using this technology it is possible to record the displacement of the articulators
-which can then be used to predict speech which is simultaneously recorded.
+which can be used to approximate the configuration of the vocal tract.
 
-The electrodes are placed on the MNGU0 \cite{Richmond2011} and MOCHA-TIMIT dataset on a total
-of seven positions. The two datasets have not recorded entire the
-same channels, so Table \ref{tab:electrodes} include the alignment
-that has been used.
+Three public datasets are combined in this study, however note that the combination is not
+entirely straightforward as the electrodes sometimes don't record the same channel, and there is absolutely no guarantee that even for the same speaker the electrode does not fall of during the experiment.
+
+It has been decided that seven electrodes will be used for this experiment,
+Table \ref{tab:electrodes} includes the alignment of the channels that were used.
+
+In order to deal with the speaker-wise variations, the articulatory trajectories of
+the datasets were standardised to have zero mean
+and unit variance on a per speaker basis. While this doesn't alleviate problems if an electrode
+falls of during the experiment, given enough per speaker data it will approximate a distribution
+of articulation movements.
+
+In the case of the TORGO dataset, some of the channels contained spikes, which
+were attached to the dataset. If the spikes happened in electrode channels, which were used
+by the neural network, then it has been excluded. This decision has been made after implementing
+some simple signal processing algorithms to remove these spikes.
+
+Previously \cite{Gonzalez2016}, the effect of delay on the
+output signal were investigated. It has been found that delay
+is beneficial in case of causal models. Our choice of function approximators are
+restricted to acausal models, so theoretically a speech sample could be synthetised using
+values from the future.
+
 \begin{table}[th]
-  \label{tab:electrodes}
   \caption{Articulatory information recorded in datasets}
+  \label{tab:electrodes}
   \centering
-  \begin{tabular}{ r r }
+  \begin{tabular}{ r r r  }
     \toprule
-    \textbf{MNGU0} & \textbf{MOCHA-TIMIT} \\
+    \textbf{MNGU0} & \textbf{MOCHA-TIMIT} & \textbf{TORGO} \\ 
     \midrule
-    Tongue dorsum (T3) & Tongue dorsum (T3) \\
-    Tongue blades (T2) & Tongue blades (T2) \\
-    Tongue tip (T1) & Tongue tip (T1) \\
-    Lower incisor (T3) & Jaw \\
-    Upper incisor & Nose \\
-    Upper lip & Upper lip \\
-    Lower lip & Lower lip \\
+    Tongue dorsum (T3) & Tongue dorsum (T3) & Tongue back \\
+    Tongue blades (T2) & Tongue blades (T2) & Tongue middle \\
+    Tongue tip (T1) & Tongue tip (T1) & Tongue tip \\
+    Lower incisor (T3) & Jaw & Lower incisor\\
+    Upper incisor & Nose & Upper incisor\\
+    Upper lip & Upper lip & Upper lip \\
+    Lower lip & Lower lip  & Lower lip\\
     \bottomrule
     \end{tabular}
 \end{table}
 
-TODO: Decide whether you want to leave out the lower incisor or jaw
 
 \begin{figure}[t]
   \begin{center}
@@ -152,16 +142,20 @@ TODO: Decide whether you want to leave out the lower incisor or jaw
     the MNGU0 dataset at time point \( t = 0 \)}
 \end{center}
 \end{figure}
-\subsection{Dataset}
+\subsubsection{Speech data processing}
 
-The MNGU0 and the MOCHA-TIMIT dataset were used to obtain a total of
-2274 samples, which were partitioned to training and validation set when
-no hyperparameter optimisation was done. An additional test set was used
-in case of hyperparameter optimisation. The dataset contains data from
-three speakers, two British male and one British female. The recordings
-from the microphones were 16kHz.
+The total combined dataset contains six British male and three British female speakers, with a total
+of 6117 utterances. The recordings from the microphones were all 16kHz. Only the healthy speech has been included from the TORGO dataset. There are 1263 utterances from the MNGU0, 920 from the MOCHA-TIMIT and 3934 from the TORGO dataset.
 
-\subsection{Sampling}
+Vocoder features were extracted with the PyWORLD vocoder \cite{Morise2016}
+and compressed with the PySPTK toolkit available at \url{http://github.com/r9y9/pysptk}.
+The period between consecutive frames were 5 miliseconds. The resulting 40 MFCC
+and 1 power parameters were used to generate static and delta parameters,
+resulting in 82 parameters for the training. As the first step of the MFCC extraction \( \alpha
+= 0.42 \) were used as a pre-emphasis coefficient. The PyWORLD vocoder
+also provides the $ F_0 $ and BAP values, which were not used for training. 
+
+\subsubsection{Sampling}
 
 It is important that the input and output sample rates of the different
 datasets are matched, because otherwise, the input-output pairs contain
@@ -169,36 +163,17 @@ different amounts of information.
 
 The sampling frequency of the original EMA signals were 500 Hz, however
 the MNGU0 was provided to us downsampled to 200 Hz. To match this frequency,
-the sampling frequency of the MOCHA-TIMIT were also downsampled to 200 Hz.
+the sampling frequency of the other datasets were also downsampled to 200 Hz.
 
-For the MNGU0 dataset, NaN values occured when the measurement precision
-was lose. These values were simply interpolated linearly.
+For the MNGU0 dataset, NaN (not a number) values occurred when the measurement precision
+was low. These values were simply interpolated linearly. 
 
 To ease training, the input signals were either truncated or padded
 so there were a total of \( T = 1000 \) samples for each training example.
 For input signals which are shorter, it is assumed that the last part is
-silence, so it is padded with the last element.
+silence, so it is padded with the last element. 
 
-\subsection{Vocoder analysis}
-
-Vocoder features were extracted with the PyWORLD vocoder \cite{Morise2016}
-and compressed with the PySPTK toolkit available at \url{http://github.com/r9y9/pysptk}.
-The period between consecutive frames were 5 miliseconds. The resulting 40 MFCC
-and 1 power parameters were used to generatic static and delta parameters,
-resulting in 82 parameters for the training. As the first step of the MFCC extraction \( \alpha
-= 0.42 \) were used a pre-emphasis coefficient. The PyWORLD vocoder
-also provides the $ F_0 $ and BAP values for synthesis, these were
-explicitly given for the synthesis, due to the reasons stated in the
-Introduction.
-
-\subsection{Delay}
-Previously \cite{Gonzalez2016}, the effect of delay on the
-output signal were investigated. While it has been found that delay
-is beneficial, the author's choice of function approximators are
-restricted to acausal models, so it has been decided
-not to use delay in our final implementation.
-
-\subsection{Fundamental frequency interpolation}
+\subsubsection{Fundamental frequency interpolation}
 
 Previously, it has been found beneficial to take the logarithm of the
 pitch to obtain a continous \( F_0 \) curve.
@@ -206,46 +181,6 @@ When the logarithm is not defined, linear  interpolatation has been done. \cite{
 An alternative method also exists with exponential interpolation
 which is described in \cite{Chen1997}. It has been decided that the
 linear interpolation technique will be used. 
-
-\subsection{Normalisation}
-
-Exploratory data analysis indicated that the articulatory trajectories of
-the datasets were on different scale and bias, so it was normalised
-on a per speaker basis. The output MFCCs were normalised for each cepstral
-coefficients.
-
-\subsection{Neural network}
-
-To approximate the functional relationship, the authors have decided to
-train a Bidirectional Long-Short Term Memory based neural network \cite{Hochreiter1997}. 
-
-For all BLSTM layers, the CuDNNLSTM implementation have been used to
-improve efficiency, however this limits the activation function to be
-stricly \( \text{tanh}(\cdot) \)
-
-A LSTM is governed by the following equations,
-
-\begin{equation}
-  \mathbf{i}_{t} = \sigma ( \mathbf{W}_{xi} \mathbf{x}_{t} + \mathbf{W}_{hi}
-  \mathbf{h}_{t-1} + \mathbf{W}_{ci} \mathbf{c}_{t-1} + \mathbf{b}_{i}),  
-\end{equation}
-\begin{equation}
-  \mathbf{f}_{t} = \sigma ( \mathbf{W}_{xf} \mathbf{x}_{t} + \mathbf{W}_{hf}
-  \mathbf{h}_{t-1} + \mathbf{W}_{cf} \mathbf{c}_{t-1} + \mathbf{b}_{f}), 
-\end{equation}
-\begin{equation}
-  \mathbf{c}_{t} = \mathbf{f} \mathbf{c}_{t-1} + \mathbf{i}_{t} \text{tanh} ( \mathbf{W}_{hc}
-  \mathbf{h}_{t-1} + \mathbf{b}_c),
-\end{equation}
-\begin{equation}
-  \mathbf{o}_{t} = \sigma ( \mathbf{W}_{x0}\mathbf{x}_t + \mathbf{W}_{ho} \mathbf{h}_{t-1}
-  + \mathbf{W}_{co}\mathbf{c}_{t} + \mathbf{b}_0 ),
-\end{equation}
-\begin{equation}
-  \mathbf{h}_t = \mathbf{o}_{t} \text{tanh} ( \mathbf{c}_t ).
-  \end{equation}
-
-The exact architectures are described in the Section \ref{nnexperiment}.
 
 \subsection{Synthesis}
 
@@ -281,7 +216,8 @@ benchmarked.
 \subsection{Neural network experiments} \label{nnexperiment}
 
 Three recurrent neural networks architectures were trained based on previous
-papers tackling similiar problems.
+papers tackling similiar problems. Slight modifications have been made to each
+architecture.
 
 Based on \cite{Liu2018}, a bidirectional LSTM was trained with four layers.
 The final layer was a fully connected layer matching the output dimensions.
@@ -295,8 +231,7 @@ function. This is followed by two BLSTM layers with 256 hidden units. Finally,
 a fully connected layer is used. This neural network was trained using Grave's RMSProp (TODO: ref),
 with a learning rate of \( \alpha = 0.01 \) .
 
-Finally, another BLSTM was trained based on the architecture of
-\cite{Liu2018}, but using Adam as an optimiser \cite{Kingma2015}.
+Finally, a BGRU was trained based on the architecture of \cite{Gonzalez2018} (TODO: check gonzalez ref}.
 
 Determining a good set of architecture and parameter settings is the most difficult part of
 the experiment design. Bidirectional LSTMs have performed the best on predicting the MFCC spectra in
@@ -310,14 +245,41 @@ fact that these known to be better for optimising non-stationary objectives. Wit
 learning rate scheduling had to be used. 
 
 In order to choose the best architecture, all of them have been reimplemented with slight modifications.
-This is a better practice, because the MCD's were interpreted differently on the different papers, i.e the error in the silence frames were not taken into consideration. All of them were compared on the mngu0 dataset. The best performing architecture have been retrained on the full dataset, using the preprocessing techniques mentioned above, and an MCD of 5.48 have been obtained.
+This is a better practice, because the MCD's were interpreted differently on the different papers, i.e the error in the silence frames were not taken into consideration. All of them were compared on the mngu0 dataset.
 
+The best performing architecture have been retrained on the full dataset, using the preprocessing techniques mentioned above, and an MCD of 5.48 have been obtained.
 
-A possible approach is to use transfer learning to get better performance.
+Due to the imbalanced dataset this immediately begs the question, how this score is reflected speaker-wise. The results can be seen in the table. According to the table below it seems to be that the true result seems to be even better. Note that the validation set sizes are smaller for the TORGO dataset which could introduce bias.
 
-The idea is either to freeze the initial model trained on the mngu0, then use pre-processing
-layers to learn the feature mappings. 
-Some valid questions: generalisation by validating on certaind datasets.
+\begin{table}[th]
+  \caption{Performance of speaker-independent articulatory to acoustic neural network}
+  \label{tab:all_data}
+  \centering
+  \footnotesize
+
+  \begin{tabular}{ r r r }
+    \toprule
+    \textbf{Dataset} & Multi-speaker & Single-speaker \\
+    \midrule
+    \textbf{Combined result} & 5.48 dB & N/A \\  
+    \midrule
+    \textbf{MNGU0} & 6.19 dB & 4.77 dB \\
+    \textbf{Female MOCHA-TIMIT} & 5.73 dB & 5.23 dB \\
+    \textbf{Male MOCHA-TIMIT} & 5.07 dB & 5.83 dB \\
+    \textbf{TORGO Part 1} & 4.06 dB & N/A \\
+    \textbf{TORGO Part 2} & 4.45 dB & N/A \\
+    \textbf{TORGO Part 3} & 3.86 dB & N/A \\
+    \textbf{TORGO Part 4} & 4.80 dB & N/A \\
+    \textbf{TORGO Part 5} & 4.90 dB & N/A \\
+    \textbf{TORGO Part 6} & 4.54 dB & N/A \\
+    \textbf{TORGO Part 7} & 4.62 dB & N/A \\
+    \textbf{TORGO Part 8} & 14.15 dB & N/A\\
+    \textbf{TORGO Part 9} & 4.54 dB & N/A \\
+    \textbf{TORGO Part 10} & 4.83 dB & N/A \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
 
 \begin{table}[th]
   \caption{Transfer learning comparison with single speaker models}
@@ -327,18 +289,18 @@ Some valid questions: generalisation by validating on certaind datasets.
 
   \begin{tabular}{ r r r}
     \toprule
-    \textbf{Dataset} & \textbf{Speaker only} & \textbf{Transfer} \\
+    \textbf{Dataset} & \textbf{Speaker only} & \textbf{Transfer preproc} \\
     \midrule
     \textbf{MNGU0} & 4.77 dB & N/A \\
-    \textbf{Female MOCHA-TIMIT} & 5.23 dB & S \\
-    \textbf{Male MOCHA-TIMIT} & 5.88 dB & S \\
+    \textbf{Female MOCHA-TIMIT} & 5.23 dB & 11.43 dB \\
+    \textbf{Male MOCHA-TIMIT} & 5.88 dB & 7.86 dB \\
     \bottomrule
   \end{tabular}
 \end{table}
 
 \begin{table}[th]
   \caption{Held out validation for different architectures on MNGU0}
-  \label{tab:example}
+  \label{tab:pilot}
   \centering
   \footnotesize
 
@@ -355,7 +317,7 @@ Some valid questions: generalisation by validating on certaind datasets.
 
 \begin{table}[th]
   \caption{Comparison of different trainng methods}
-  \label{tab:example}
+  \label{tab:architectures}
   \centering
   \footnotesize
 
@@ -380,29 +342,7 @@ Some valid questions: generalisation by validating on certaind datasets.
   * with decay after Epoch 11 \\
   ** from author communication
 \end{table}
-\begin{table}[th]
-  \caption{Comparison of different trainng methods}
-  \label{tab:example}
-  \centering
-  \begin{tabular}{ r r r }
-    \toprule
-    \textbf{Architecture} & \textbf{Optimiser} & \textbf{Base learning rate} \\
-    \midrule
-    Liu 2018 & SGD & 0.01 \\
-    Taguchi 2018 & RMSProp & 0.01       \\
-    Modified Liu & Adam & 0.01               \\
-    \bottomrule
-  \end{tabular}
-  
-\end{table}
 
-\begin{figure}[t]
-  \begin{center}
-    \scalebox{0.75}{\input{blstm_act.pgf}}
-    \caption{Something}
-\end{center}
-\end{figure}
-iii
 For training the mean squared error loss function was used, and for
 evaluation the Mel cepstral distortion (MCD) have been employed. \cite{Kubichek1993}
 
@@ -521,7 +461,16 @@ future experiment design.
 \end{center}
 \end{figure}
 
+%\subsection{Ablation study of activations}
+\subsection{What do these neural networks learn?}
 
+Based on our training, it seems clear that a GRU architecture was superior to an LSTM
+architecture in our case, when used with a more conventional optimiser.
+General consesus of sequential networks seems to be that sometimes GRU and sometimes LSTM is better
+https://arxiv.org/pdf/1412.3555v1.pdf
+
+The LSTM layers show boundaries in the activation. This indicates that the neural network
+has learned some representation of subword units like phones or phonemes.
 \subsection{Pathological speech examples}
 
 The pathological speech examples can be listened on the webpage of the

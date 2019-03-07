@@ -19,11 +19,13 @@
     "url"
     "blindtext")
    (LaTeX-add-labels
-    "fig1"
     "tab:electrodes"
     "tab:example"
     "nnexperiment"
+    "tab:all_data"
     "tab:transfer"
+    "tab:pilot"
+    "tab:architectures"
     "eq1"
     "eq2"
     "eq3"
