@@ -2,7 +2,7 @@
 
 import numpy as np
 import scipy.signal as signal
-
+import Signal_Analysis.features.signal as safs
 from nnmnkwii.metrics import melcd
 from nnmnkwii.preprocessing import trim_zeros_frames
 
@@ -15,7 +15,7 @@ from keras.models import load_model
 from keras_layer_normalization import LayerNormalization
 
 import matplotlib.pyplot as plt
-
+import utils
 # This should be same as the training options
 
 def synthesis(args):
@@ -51,11 +51,11 @@ def synthesis(args):
     #path_test = pathology.upsampling(X,total=6500, channels=[4,9])
 
     # Delay
-    #path_test = pathology.delay_signal(X,10,channel_idx=[4,9])
+    path_test = pathology.delay_signal(X,50,channel_idx=[4,9])
 
-    path_test = pathology.scale_channel(X,2.5,[2,3,4,5])
+    #path_test = pathology.scale_channel(X,10/8,[2,3,4,5])
 
-    #path_test = pathology.add_noise(X,3,[4,5])
+    #path_test = pathology.add_noise(X,1,[4,5])
     #path_test = pathology.set_channel(X,0,[4,5])
     # Method 3: Zero the channel
     #path_test = pathology.add_noise(X, [4,9])
@@ -121,7 +121,10 @@ def synthesis(args):
                                 mlpg_generated[id,:resynth_length,:],
                                 bap_gt_u[id,:resynth_length,:],
                                 fs=16000,
-                                an=5)
+                                        an=5)
+
+            print(len(utils.get_HNR(sound1,16000)))
+
             fname = "sounds5/pathological/" + str(i) + ".wav"
 
             sound2 = audio.save_resynth(fname,f0[id,:resynth_length],
@@ -130,7 +133,9 @@ def synthesis(args):
                                 fs=16000,
                                 an=5)
 
-
+            plt.plot(utils.get_HNR(sound1,16000),"r")
+            plt.plot(utils.get_HNR(sound2,16000),"g")
+            plt.show()
 if __name__ == "__main__":
 
     import argparse

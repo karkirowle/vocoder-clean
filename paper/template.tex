@@ -93,9 +93,9 @@ Using this technology it is possible to record the displacement of the articulat
 which can be used to approximate the configuration of the vocal tract.
 
 Three public datasets are combined in this study, however note that the combination is not
-entirely straightforward as the electrodes sometimes don't record the same channel, and there is absolutely no guarantee that even for the same speaker the electrode does not fall of during the experiment.
+entirely straightforward as the electrodes sometimes don't record the same channel, and there is absolutely no guarantee that even for the same speaker the electrode does not fall off during the experiment.
 
-It has been decided that seven electrodes will be used for this experiment,
+It has been decided that seven electrodes will be used for this experiment out of the total eight,
 Table \ref{tab:electrodes} includes the alignment of the channels that were used.
 
 In order to deal with the speaker-wise variations, the articulatory trajectories of
@@ -138,6 +138,15 @@ values from the future.
 \begin{figure}[t]
   \begin{center}
     \scalebox{0.50}{\input{init_pos.pgf}}
+  \caption{The visualisation of electrode locations for all samples in
+    the MNGU0 dataset at time point \( t = 0 \)}
+\end{center}
+\end{figure}
+
+iii
+\begin{figure}[t]
+  \begin{center}
+    \scalebox{0.40}{\input{blstm_act.pgf}}
   \caption{The visualisation of electrode locations for all samples in
     the MNGU0 dataset at time point \( t = 0 \)}
 \end{center}
@@ -231,7 +240,7 @@ function. This is followed by two BLSTM layers with 256 hidden units. Finally,
 a fully connected layer is used. This neural network was trained using Grave's RMSProp (TODO: ref),
 with a learning rate of \( \alpha = 0.01 \) .
 
-Finally, a BGRU was trained based on the architecture of \cite{Gonzalez2018} (TODO: check gonzalez ref}.
+Finally, a BGRU was trained based on the architecture of \cite{Gonzalez2018} (TODO: check gonzalez ref).
 
 Determining a good set of architecture and parameter settings is the most difficult part of
 the experiment design. Bidirectional LSTMs have performed the best on predicting the MFCC spectra in
@@ -471,6 +480,12 @@ https://arxiv.org/pdf/1412.3555v1.pdf
 
 The LSTM layers show boundaries in the activation. This indicates that the neural network
 has learned some representation of subword units like phones or phonemes.
+
+
+\subsection{Vocoder upper bound}
+
+In our experience, one significant bottleneck in this application is
+the vocoder itself.  To quantify this
 \subsection{Pathological speech examples}
 
 The pathological speech examples can be listened on the webpage of the

@@ -2,7 +2,7 @@ import pyworld as pw
 import pysptk as sptk
 import sounddevice as sd
 from scipy.io import wavfile
-
+import numpy as np
 def debug_synth(f0,sp,ap,fs,an=2):
     """
     Plays a synthetised audio
@@ -47,7 +47,7 @@ def debug_resynth(f0_,sp_,ap_,fs,an=2,alpha=0.42,fftbin=1024):
     sd.wait()
 
     return sound
-def save_resynth(fname,f0_,sp_,ap_,fs,an=2,alpha=0.42,fftbin=1024):
+def save_resynth(fname,f0_,sp_,ap_,fs,dtype=np.float32,an=2,alpha=0.42,fftbin=1024):
     """
     Plays a synthetised audio from the encoded parameters
     It is good to perform quick analysis-resynthesis
@@ -71,4 +71,5 @@ def save_resynth(fname,f0_,sp_,ap_,fs,an=2,alpha=0.42,fftbin=1024):
     sound = pw.synthesize(f0_,sp_,ap_,fs,an)
     sd.play(sound*3,fs)
     sd.wait()
-    wavfile.write(fname,fs,sound*3)
+    wavfile.write(fname,fs,sound.astype(dtype))
+    return sound
