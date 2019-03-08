@@ -1,0 +1,64 @@
+(TeX-add-style-hook
+ "INTERSPEECH2018"
+ (lambda ()
+   (TeX-add-to-alist 'LaTeX-provided-package-options
+                     '(("caption" "textfont=it" "tableposition=top")))
+   (TeX-run-style-hooks
+    "graphicx"
+    "amssymb"
+    "amsmath"
+    "bm"
+    "textcomp"
+    "booktabs"
+    "caption")
+   (TeX-add-symbols
+    "plainheadrulewidth"
+    "plainfootrulewidth"
+    "headwidth"
+    "vec"
+    "mat"
+    "ninept"
+    "eightpt"
+    "normalsize"
+    "thefootnote"
+    "maketitle"
+    "title"
+    "name"
+    "address"
+    "email"
+    "thanks"
+    "sthanks"
+    "copyrightnotice"
+    "toappear"
+    "newblock"
+    "lhead"
+    "chead"
+    "rhead"
+    "lfoot"
+    "cfoot"
+    "rfoot"
+    "fancyplain"
+    "baselinestretch"
+    "headrule"
+    "headrulewidth"
+    "footrule"
+    "footrulewidth"
+    "subsectionmark"
+    "chaptermark"
+    "sectionmark"
+    "topfloat"
+    "botfloat"
+    "iftopfloat"
+    "ifbotfloat"
+    "iffloatpage")
+   (LaTeX-add-environments
+    "thebibliography"
+    "abstract")
+   (LaTeX-add-pagestyles
+    "preprint"
+    "empty"
+    "fancy"
+    "fancyplain"
+    "plain"))
+ :latex)
+

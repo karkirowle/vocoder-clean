@@ -3,7 +3,10 @@
 \citation{Aryal2016}
 \citation{Taguchi}
 \citation{Liu2018}
+\citation{Hochreiter1997}
 \citation{Gonzalez2017}
+\citation{Richmond2011}
+\citation{Rudzicz2012}
 \citation{Gonzalez2016}
 \@writefile{toc}{\contentsline {section}{\numberline {1} Introduction}{1}}
 \@writefile{toc}{\contentsline {section}{\numberline {2} Method}{1}}
@@ -12,60 +15,80 @@
 \citation{Morise2016}
 \citation{Gonzalez2017}
 \citation{Chen1997}
+\citation{Kawahara2006}
+\citation{Kawahara2006}
+\citation{Liu2018}
+\citation{Taguchi}
+\citation{Graves2013}
 \@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Articulatory information recorded in datasets\relax }}{2}}
 \providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
 \newlabel{tab:electrodes}{{1}{2}}
 \@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces The visualisation of electrode locations for all samples in the MNGU0 dataset at time point \( t = 0 \)\relax }}{2}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {2.1.2} Speech data processing}{2}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {2.1.3} Sampling}{2}}
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces The visualisation of electrode locations for all samples in the MNGU0 dataset at time point \( t = 0 \)\relax }}{2}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Thresholded difference mask of activations indicates that a boundary phenomena is learned by the neural network. Best viewed in zoom.\relax }}{2}}
+\newlabel{fig:mask}{{2}{2}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {2.1.4} Fundamental frequency interpolation}{2}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.2} Synthesis}{2}}
-\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Comparison of preprocessing techniques\relax }}{2}}
-\newlabel{tab:example}{{2}{2}}
-\citation{Liu2018}
-\citation{Taguchi}
-\citation{Gonzalez2018}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2} Synthesis setup}{2}}
+\@writefile{toc}{\contentsline {section}{\numberline {3} Experiment}{2}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1} Neural network experiments}{2}}
+\newlabel{nnexperiment}{{3.1}{2}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.1.1} Previous architectures}{2}}
+\citation{Gonzalez2017}
+\citation{Kingma2015}
+\citation{Wu2016}
 \citation{Kubichek1993}
-\@writefile{toc}{\contentsline {section}{\numberline {3} Experiment}{3}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.1} Neural network experiments}{3}}
-\newlabel{nnexperiment}{{3.1}{3}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.2} Pathological speech synthesis}{3}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Red dashed line indicates training-only setup, and blue thick lines indicate inference for speech synthesis. Best viewed in colour.\relax }}{3}}
+\newlabel{fig:structure}{{3}{3}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Comparison of preprocessing techniques\relax }}{3}}
+\newlabel{tab:example}{{2}{3}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.1.2} Justification for layer choices}{3}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.1.3} Optimisation}{3}}
 \@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Performance of speaker-independent articulatory to acoustic neural network\relax }}{3}}
 \newlabel{tab:all_data}{{3}{3}}
 \@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Transfer learning comparison with single speaker models\relax }}{3}}
 \newlabel{tab:transfer}{{4}{3}}
-\newlabel{eq1}{{1}{3}}
-\newlabel{eq2}{{2}{3}}
-\newlabel{eq3}{{3}{3}}
-\newlabel{eq4}{{4}{3}}
-\@writefile{toc}{\contentsline {section}{\numberline {4} Results and discussion}{3}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.1} Benchmark results}{3}}
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Held out validation for different architectures on MNGU0\relax }}{3}}
+\newlabel{tab:pilot}{{5}{3}}
+\citation{Jozefowicz2015}
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Comparison of different trainng methods\relax }}{4}}
+\newlabel{tab:architectures}{{6}{4}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2} Pathological speech synthesis}{4}}
+\newlabel{eq1}{{1}{4}}
+\newlabel{eq2}{{2}{4}}
+\newlabel{eq3}{{3}{4}}
+\newlabel{eq4}{{4}{4}}
+\@writefile{toc}{\contentsline {section}{\numberline {4} Results and discussion}{4}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1} Benchmark results}{4}}
+\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces Comparison of 10-fold CV performance of neural networks\relax }}{4}}
+\newlabel{tab:example1}{{7}{4}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Partial data retraining shows that adding more data would decrease loss\relax }}{4}}
+\newlabel{learning_curve}{{4}{4}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2} Learning curves}{4}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3} What do these neural networks learn?}{4}}
 \bibstyle{IEEEtran}
 \bibdata{paper1}
 \bibcite{Benesty2009}{1}
 \bibcite{Aryal2016}{2}
-\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Held out validation for different architectures on MNGU0\relax }}{4}}
-\newlabel{tab:pilot}{{5}{4}}
-\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Comparison of different trainng methods\relax }}{4}}
-\newlabel{tab:architectures}{{6}{4}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2} Learning curves}{4}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.3} What do these neural networks learn?}{4}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.4} Vocoder upper bound}{4}}
-\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces Comparison of 10-fold CV performance of neural networks\relax }}{4}}
-\newlabel{tab:example}{{7}{4}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Partial data retraining shows that adding more data would decrease loss\relax }}{4}}
-\newlabel{learning_curve}{{3}{4}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.5} Pathological speech examples}{4}}
-\@writefile{toc}{\contentsline {section}{\numberline {5} Conclusion}{4}}
-\@writefile{toc}{\contentsline {section}{\numberline {6} Acknowledgements}{4}}
-\@writefile{toc}{\contentsline {section}{\numberline {7} References}{4}}
 \bibcite{Taguchi}{3}
 \bibcite{Liu2018}{4}
-\bibcite{Gonzalez2017}{5}
-\bibcite{Gonzalez2016}{6}
-\bibcite{Morise2016}{7}
-\bibcite{Chen1997}{8}
-\bibcite{Kubichek1993}{9}
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Partial data retraining shows that adding more data would decrease loss. \relax }}{5}}
-\newlabel{retraining_linear}{{4}{5}}
+\bibcite{Hochreiter1997}{5}
+\bibcite{Gonzalez2017}{6}
+\bibcite{Richmond2011}{7}
+\bibcite{Rudzicz2012}{8}
+\bibcite{Gonzalez2016}{9}
+\bibcite{Morise2016}{10}
+\bibcite{Chen1997}{11}
+\bibcite{Kawahara2006}{12}
+\bibcite{Graves2013}{13}
+\bibcite{Kingma2015}{14}
+\bibcite{Wu2016}{15}
+\bibcite{Kubichek1993}{16}
+\bibcite{Jozefowicz2015}{17}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Partial data retraining shows that adding more data would decrease loss. \relax }}{5}}
+\newlabel{retraining_linear}{{5}{5}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4} Vocoder upper bound}{5}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5} Pathological speech examples}{5}}
+\@writefile{toc}{\contentsline {section}{\numberline {5} Conclusion}{5}}
+\@writefile{toc}{\contentsline {section}{\numberline {6} Acknowledgements}{5}}
+\@writefile{toc}{\contentsline {section}{\numberline {7} References}{5}}

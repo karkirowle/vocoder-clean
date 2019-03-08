@@ -8,54 +8,54 @@ Reallocated singl_function (elt_size=4) to 100 items from 50.
 Reallocated wiz_functions (elt_size=4) to 6000 items from 3000.
 Reallocated singl_function (elt_size=4) to 100 items from 50.
 Database file #1: paper1.bib
-Warning--I didn't find a database entry for "Gonzalez2018"
 -- IEEEtran.bst version 1.13 (2008/09/30) by Michael Shell.
 -- http://www.michaelshell.org/tex/ieeetran/bibtex/
 -- See the "IEEEtran_bst_HOWTO.pdf" manual for usage information.
 Warning--missing publisher in Benesty2009
 Warning--empty journal in Taguchi
 Warning--empty year in Taguchi
+Warning--empty journal in Graves2013
 
 Done.
-You've used 9 entries,
+You've used 17 entries,
             4039 wiz_defined-function locations,
-            877 strings with 9495 characters,
-and the built_in function-call counts, 6268 in all, are:
-= -- 497
-> -- 178
+            919 strings with 10828 characters,
+and the built_in function-call counts, 9478 in all, are:
+= -- 750
+> -- 252
 < -- 44
-+ -- 94
-- -- 34
-* -- 325
-:= -- 990
-add.period$ -- 17
-call.type$ -- 9
-change.case$ -- 8
++ -- 128
+- -- 51
+* -- 462
+:= -- 1577
+add.period$ -- 33
+call.type$ -- 17
+change.case$ -- 16
 chr.to.int$ -- 102
-cite$ -- 12
-duplicate$ -- 446
-empty$ -- 473
-format.name$ -- 42
-if$ -- 1394
+cite$ -- 21
+duplicate$ -- 736
+empty$ -- 787
+format.name$ -- 65
+if$ -- 2094
 int.to.chr$ -- 0
-int.to.str$ -- 9
-missing$ -- 80
-newline$ -- 58
-num.names$ -- 9
-pop$ -- 196
+int.to.str$ -- 17
+missing$ -- 131
+newline$ -- 84
+num.names$ -- 17
+pop$ -- 339
 preamble$ -- 1
 purify$ -- 0
 quote$ -- 2
-skip$ -- 476
+skip$ -- 726
 stack$ -- 0
-substring$ -- 246
-swap$ -- 351
+substring$ -- 254
+swap$ -- 505
 text.length$ -- 10
 text.prefix$ -- 0
 top$ -- 5
-type$ -- 9
-warning$ -- 3
-while$ -- 25
-width$ -- 10
-write$ -- 113
+type$ -- 17
+warning$ -- 4
+while$ -- 33
+width$ -- 19
+write$ -- 179
 (There were 4 warnings)

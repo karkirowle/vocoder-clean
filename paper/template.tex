@@ -4,10 +4,10 @@
 \usepackage{tikz}
 \usepackage{url}
 \usepackage{blindtext}
-\usetikzlibrary{shapes,arrows,positioning}
+\usetikzlibrary{shapes,shadows,arrows,positioning}
 
 \tikzstyle{block} = [draw, fill=white, rectangle, 
-    minimum height=3em, minimum width=6em]
+    minimum height=3em, minimum width=6em, rounded corners, drop shadow]
 \tikzstyle{sum} = [draw, fill=white, circle, node distance=1cm]
 \tikzstyle{input} = [coordinate]
 \tikzstyle{output} = [coordinate]
@@ -47,7 +47,7 @@ to understand articulation. These methods use a measurement tool,
 called electromagnetic articulography to obtain articulation data 
 \cite{Aryal2016} \cite{Taguchi} \cite{Liu2018} along with recurrent
 neural networks, which are neural networks that are able to deal with
-the sequential nature of data. Data-driven methods became of interest also
+the sequential nature of data \cite{Hochreiter1997}. Data-driven methods became of interest also
 in real-time speech synthesis. The efficacy of real-time speech synthesis
 has been investigated using a tool called permanent magnetic articulography
 by Gonzalez et al \cite{Gonzalez2017}, which gave understandable
@@ -70,7 +70,7 @@ information. Thus based on the electrode signals of the vocal tract configuratio
 it should be possible to predict part of the spectra only dependent on the vocal
 tract configuration.
 
-In this paper, a technique is described which combines healthy speech from the three largest articulatory dataset, MNGU0, MOCHA-TIMIT and MNGU0 to create a general speaker-independent model. 
+In this paper, a technique is described which combines healthy speech from the three largest articulatory dataset, MNGU0 \cite{Richmond2011}, MOCHA-TIMIT and TORGO \cite{Rudzicz2012} to create a general speaker-independent model. 
 
 The main contributions of this paper are,
 \begin{itemize}
@@ -143,12 +143,11 @@ values from the future.
 \end{center}
 \end{figure}
 
-iii
 \begin{figure}[t]
+  \caption{Thresholded difference mask of activations indicates that a boundary phenomena is learned by the neural network. Best viewed in zoom.}
+  \label{fig:mask}
   \begin{center}
     \scalebox{0.40}{\input{blstm_act.pgf}}
-  \caption{The visualisation of electrode locations for all samples in
-    the MNGU0 dataset at time point \( t = 0 \)}
 \end{center}
 \end{figure}
 \subsubsection{Speech data processing}
@@ -180,7 +179,7 @@ was low. These values were simply interpolated linearly.
 To ease training, the input signals were either truncated or padded
 so there were a total of \( T = 1000 \) samples for each training example.
 For input signals which are shorter, it is assumed that the last part is
-silence, so it is padded with the last element. 
+silence, so it is padded with the last element. These are not propagated back during training, to avoid the neural network making inference based on the length of the last element.
 
 \subsubsection{Fundamental frequency interpolation}
 
@@ -191,11 +190,33 @@ An alternative method also exists with exponential interpolation
 which is described in \cite{Chen1997}. It has been decided that the
 linear interpolation technique will be used. 
 
-\subsection{Synthesis}
+\subsection{Synthesis setup}
 
-Synthesis for the validation set is performed using the ground truth
-parameters for the BAP and $ F_0 $ and only the spectral prediction is
-benchmarked.
+The setup for inference and training can be seen on Figure \ref{fig:structure}.
+In the training setup, the MFCCs are given to be predicted only. The pitch and band aperiodicities
+are directly feed to the vocoder during synthesis time, as these don't contain information about articulation. 
+
+\begin{figure}
+  \caption{Red dashed line indicates training-only setup, and blue thick lines indicate inference for speech synthesis. Best viewed in colour.}
+  \label{fig:structure}
+  \begin{tikzpicture}[auto, node distance=3cm,>=latex']
+    \node [input, name=speech] {};
+    
+    \node [block, right of=speech] (analysis) {Analysis};
+    \node [block, below of=analysis] (model) {Model};
+    \node [block, right of=model] (synthesis) {Synthesis};
+    \node [input, name=ema, left of=model] {};
+    \node [right of=analysis, name=bela] {};
+    \draw [->] (speech) -- node {$\text{Speech}$} (analysis);
+    \draw [->,color=blue,thick] (model.350) -- node {$\text{MFCC}$} (synthesis.190);
+    \draw[->,color=red,dashed] (analysis.340) -- +(2em, 0) node[above] {$\text{MFCC}$} |- (model.380);
+    \draw[->] (analysis.270) -- node {$F_0$} (model.90);
+    \draw[->,color=blue,thick] (analysis.380) -- +(2em,0) node[above] {$\text{BAP}$} -| (synthesis.130);
+    \draw[->,color=blue,thick] (synthesis.0) -- +(3em,0) node[above] {$\text{Speech}$};
+    \draw[->] (ema) -- node[above] {$\text{EMA}$} (model);
+    \draw[->,color=blue,thick] (analysis.90) -- +(0,2em) node[left] {$F_0$} -| (synthesis.50);
+    \end{tikzpicture}
+\end{figure}
 
 \begin{table}[th]
   \caption{Comparison of preprocessing techniques}
@@ -213,9 +234,8 @@ benchmarked.
     \textbf{Input standardisation} & Yes & N/A  & Yes \\
     \textbf{Trajectory smoothing} & No & Yes  & No \\
     \textbf{Output standardisation} & Yes & Yes & Yes \\
-    \textbf{Vocoder} & STRAIGHT & WORLD  & STRAIGHT \\
+    \textbf{Vocoder} & STRAIGHT \cite{Kawahara2006} & WORLD  & STRAIGHT \cite{Kawahara2006} \\
     \bottomrule
-    
   \end{tabular}
   *Upsampled to 200 to match analysis rate
 \end{table}
@@ -224,24 +244,26 @@ benchmarked.
 
 \subsection{Neural network experiments} \label{nnexperiment}
 
+\subsubsection{Previous architectures}
 Three recurrent neural networks architectures were trained based on previous
 papers tackling similiar problems. Slight modifications have been made to each
 architecture.
+
 
 Based on \cite{Liu2018}, a bidirectional LSTM was trained with four layers.
 The final layer was a fully connected layer matching the output dimensions.
 This neural network was trained using stochastic gradient descent and
 a learning rate of \( \alpha = 0.01 \).
-
+ii
 Another publication \cite{Taguchi} used a neural networks with three fully
 connected layers with 128 hidden units, each layer has a linear activation
 function, which is followed by Layer Normalisation and a sigmoid activation
 function. This is followed by two BLSTM layers with 256 hidden units. Finally,
-a fully connected layer is used. This neural network was trained using Grave's RMSProp (TODO: ref),
-with a learning rate of \( \alpha = 0.01 \) .
+a fully connected layer is used. This neural network was trained using Grave's RMSProp \cite{Graves2013},with a learning rate of \( \alpha = 0.01 \) .
 
-Finally, a BGRU was trained based on the architecture of \cite{Gonzalez2018} (TODO: check gonzalez ref).
+Finally, a BGRU was trained based on the architecture of \cite{Gonzalez2017}.
 
+\subsubsection{Justification for layer choices}
 Determining a good set of architecture and parameter settings is the most difficult part of
 the experiment design. Bidirectional LSTMs have performed the best on predicting the MFCC spectra in
 all related papers. Taguchi uses fully-connected layers and while it not justified in the paper, it
@@ -249,13 +271,13 @@ is reasonable to assume that this does pre-processing of the time-series.
 
 It can be easily seen mathematically that after after the last LSTM layer, a fully connected layer is also needed as this acts as a linear regression based on the LSTM parameters. This is because the range of the activation function is not sufficient to capture the range of the normalised MFCCs. It is possible to introduce some structural bias by using the same linear regression from each frame, somewhat limiting complexity. 
 
-In terms of the optimisation, Adam and Graves's RMSProp is preferred, which is not surpsing due to the
+\subsubsection{Optimisation}
+In terms of the optimisation, Adam \cite{Kingma2015} and Graves's RMSProp is preferred, which is not surpsing due to the
 fact that these known to be better for optimising non-stationary objectives. With the SGD,
 learning rate scheduling had to be used. 
 
 In order to choose the best architecture, all of them have been reimplemented with slight modifications.
 This is a better practice, because the MCD's were interpreted differently on the different papers, i.e the error in the silence frames were not taken into consideration. All of them were compared on the mngu0 dataset.
-
 The best performing architecture have been retrained on the full dataset, using the preprocessing techniques mentioned above, and an MCD of 5.48 have been obtained.
 
 Due to the imbalanced dataset this immediately begs the question, how this score is reflected speaker-wise. The results can be seen in the table. According to the table below it seems to be that the true result seems to be even better. Note that the validation set sizes are smaller for the TORGO dataset which could introduce bias.
@@ -274,7 +296,7 @@ Due to the imbalanced dataset this immediately begs the question, how this score
     \midrule
     \textbf{MNGU0} & 6.19 dB & 4.77 dB \\
     \textbf{Female MOCHA-TIMIT} & 5.73 dB & 5.23 dB \\
-    \textbf{Male MOCHA-TIMIT} & 5.07 dB & 5.83 dB \\
+    \textbf{Male MOCHA-TIMIT} & \textbf{5.07 dB} & 5.83 dB \\
     \textbf{TORGO Part 1} & 4.06 dB & N/A \\
     \textbf{TORGO Part 2} & 4.45 dB & N/A \\
     \textbf{TORGO Part 3} & 3.86 dB & N/A \\
@@ -342,7 +364,7 @@ Due to the imbalanced dataset this immediately begs the question, how this score
     \textbf{Learning rate} & 0.01* & 0.01 & 0.003 \\
     \textbf{Gradient clipping} & No & 5 & No \\
     \textbf{Early stopping} & Yes & Yes & Yes \\
-    \textbf{MLPG} & No & Yes & Yes \\ 
+    \textbf{MLPG} \cite{Wu2016} & No & Yes & Yes \\ 
     \textbf{Maximum epochs} & 32 & N/A & 100 \\
     \textbf{Batch size} & N/A & 8 & 100 \\
     \textbf{Incremental training} & No & Yes & Yes \\
@@ -407,7 +429,7 @@ to synthetise pathological speech.
 \subsection{Benchmark results}
 \begin{table}[th]
   \caption{Comparison of 10-fold CV performance of neural networks}
-  \label{tab:example}
+  \label{tab:example1}
   \centering
   \begin{tabular}{ r r }
     \toprule
@@ -470,18 +492,22 @@ future experiment design.
 \end{center}
 \end{figure}
 
-%\subsection{Ablation study of activations}
 \subsection{What do these neural networks learn?}
 
 Based on our training, it seems clear that a GRU architecture was superior to an LSTM
 architecture in our case, when used with a more conventional optimiser.
 General consesus of sequential networks seems to be that sometimes GRU and sometimes LSTM is better
-https://arxiv.org/pdf/1412.3555v1.pdf
+\cite{Jozefowicz2015}
 
-The LSTM layers show boundaries in the activation. This indicates that the neural network
-has learned some representation of subword units like phones or phonemes.
+Recently, there have been many advancements in understanding what neural networks learn.
+Convolutional neural networks can be analysed via conventional methods in filter analysis,
+classification neural networks can propagate back gradients to find the most important inputs for
+the prediction. These techniques are not applicable for recurrent neural networks in a regression
+context, so we resort to exploring the activations outputs of the layers.
 
-
+To make these intelligible, a difference mask is thresholded to find oriented peaks in the spectra.
+On Figure \ref{fig:mask}, two things can be observed. Firstly, line-like boundaries are learned, and their duration indicates these might approximate phone to word level representations. Secondly, as the activations propagate through the deeper layers of the neural networks, these line like boundaries are better approximated.
+iii
 \subsection{Vocoder upper bound}
 
 In our experience, one significant bottleneck in this application is
@@ -489,7 +515,7 @@ the vocoder itself.  To quantify this
 \subsection{Pathological speech examples}
 
 The pathological speech examples can be listened on the webpage of the
-author, see \url{http://karkirowle.github.io/paper1}. 
+author, see \url{http://karkirowle.github.io/paper1}.  
 
 \section{Conclusion}
 
@@ -511,8 +537,7 @@ instead of physical considerations.
 This project has received funding from the European Union's Horizon
 2020 research and innovation programme under Marie Sklodowska-Curie
 grant agreement No 766287.
-
-
+This work was carried out on the Dutch national e-infrastructure with the support of SURF Cooperative.
 
 \bibliographystyle{IEEEtran}
 
