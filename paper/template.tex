@@ -13,7 +13,7 @@
 \tikzstyle{output} = [coordinate]
 \tikzstyle{pinstyle} = [pin edge={to-,thin,black}]
 
-\title{Pathological speech synthesis from articulation}
+\title{Towards pathological speech synthesis from articulation}
 \name{Bence Halpern$^1$$^2$, Rob J. J. H. van Son$^1$, Michiel W. M.
   van den Brekel$^1$$^2$}
 %The maximum number of authors in the author list is twenty. If the number of contributing authors is more than twenty, they should be listed in a footnote or in acknowledgement section, as appropriate.
@@ -36,7 +36,7 @@ speech synthesis, deep learning, pathological speech
 
 Understanding how articulation affects speech is a central question in speech
 research. The source-filter model was one of the first models to tackle this
-problem by noting that speech production could be described by
+problem by discovering that speech production could be described by
 the geometry of the vocal tract and the glottal wave. Mathematically,
 the source-filter model synthetises speech by exciting an autoregressive (AR) model with a
 signal, where the AR coefficients capture the geometry of the
@@ -49,71 +49,79 @@ called electromagnetic articulography to obtain articulation data
 neural networks, which are neural networks that are able to deal with
 the sequential nature of data \cite{Hochreiter1997}. Data-driven methods became of interest also
 in real-time speech synthesis. The efficacy of real-time speech synthesis
-has been investigated using a tool called permanent magnetic articulography
-by Gonzalez et al \cite{Gonzalez2017}, which gave understandable
+has been investigated using a technique called permanent magnetic articulography
+by \cite{Gonzalez2017}, which gave understandable
 speech.
 
 The conclusion of these endeavours were that while it is possible to
 predict some of the pitch from articulation, the quality suffers.
-It is, however, possible to obtain satisfactory values for the
-cepstral quality.
+However, it is possible to obtain satisfactory values for the
+cepstrum.
 
-In the author's broader research, the aim is to demonstrate how pathologies in
-articulation are translated to speech. In some types of pathological
-speech the laryngeal function remains intact, meaning the \( F_0 \)
-remains unchanged. This means, by knowing the original pitch and the
-pathological deviations in articulation, it should be possible to
-synthetise pathological speech if the pathology is on the articulation level.
+This indicates, that this technique could be a good candidate for synthetising
+pathological speech where the pitch of the voice is natural. For example,
+in the case of tongue cancer speech, the laryngeal function remains intact,
+meaning the pitch remains natural. Thus, it is proposed that the \( F_0 \) could
+be simply obtained through vocoder analysis and only predict the cepstral
+values through articulation to model pathologies.
 
-The idea with MFCCs is to seperate vocal tract information from the excitation
-information. Thus based on the electrode signals of the vocal tract configuration
-it should be possible to predict part of the spectra only dependent on the vocal
-tract configuration.
+In this paper, a technique is described which combines healthy speech
+from the three largest articulatory datasets, MNGU0 \cite{Richmond2011},
+MOCHA-TIMIT and TORGO \cite{Rudzicz2012} for the first time, in order to
+create a general speaker-independent articulatory to acoustic model.
 
-In this paper, a technique is described which combines healthy speech from the three largest articulatory dataset, MNGU0 \cite{Richmond2011}, MOCHA-TIMIT and TORGO \cite{Rudzicz2012} to create a general speaker-independent model. 
-
+\vspace{1em}
 The main contributions of this paper are,
 \begin{itemize}
-\item a set of benchmarks for single-speaker and multi-speaker articulatory to acoustic synthesis
-\item a discussion of what these neural networks learn
-\item an example of how to construct pathological speech using this framework
+\itemsep0em
+\item a description of a method for speaker-independent MFCC prediction in Section \ref{section:method}
+\item a technique to incorporate articulation domain-knowledge into pathological
+  speech synthesis in Section \ref{section:speech} 
+\item a discussion of the current limitations of this framework in Section \ref{section:limitations}
+\item an attempt to shed light on what these neural networks might learn in Section \ref{section:visualisation}
 \end{itemize}
 
 Our code is also available as a Github repository on the link
 \url{https://github.com/karkirowle/vocoder-clean}.
 
-\section{Method}
+\section{Method} \label{section:method}
 \subsection{Dataset preprocessing}
 
 \subsubsection{Electrode preprocessing}
 
-Electromagnetic articulography (EMA) is a measurement technology which uses
-sensor coils which are placed on the articulators of the vocal tract.
-Using this technology it is possible to record the displacement of the articulators
-which can be used to approximate the configuration of the vocal tract.
+Electromagnetic articulography (EMA) is a measurement technology
+which enables us to model articulation. Each dataset contains recordings
+using this technology, however the articulators recorded are slightly
+different, meaning particular attention has to be paid to align these datasets.
+An example of EMA recording locations are shown on Figure \ref{fig:electrodes}.
 
-Three public datasets are combined in this study, however note that the combination is not
-entirely straightforward as the electrodes sometimes don't record the same channel, and there is absolutely no guarantee that even for the same speaker the electrode does not fall off during the experiment.
+Firstly, it has been decided that seven electrodes will be used for this
+experiment out of the total eight, Table \ref{tab:electrodes} includes
+the alignment of the channels that were used. This ensures that each
+input channel records reasonably similar information, meaning that the
+channels should have similar variance.
 
-It has been decided that seven electrodes will be used for this experiment out of the total eight,
-Table \ref{tab:electrodes} includes the alignment of the channels that were used.
-
-In order to deal with the speaker-wise variations, the articulatory trajectories of
-the datasets were standardised to have zero mean
-and unit variance on a per speaker basis. While this doesn't alleviate problems if an electrode
-falls of during the experiment, given enough per speaker data it will approximate a distribution
-of articulation movements.
+However, this alone does not deal with the speaker-wise variations. In
+order to ensure that the input represents a general articulation distribution,
+the articulatory trajectories of the datasets were standardised to have
+zero mean and unit variance on a per speaker basis. This alleviates some
+of the deviations, but does not alleviate problems if an electrode
+falls off during the experiment or if an electrode needs to be changed.
 
 In the case of the TORGO dataset, some of the channels contained spikes, which
-were attached to the dataset. If the spikes happened in electrode channels, which were used
-by the neural network, then it has been excluded. This decision has been made after implementing
-some simple signal processing algorithms to remove these spikes.
+were attached to the dataset. If the spikes happened in electrode channels,
+which were used by the neural network, then these have been excluded.
+This decision has been made after implementing some simple signal
+processing algorithms to remove these spikes. The signal to noise
+ratio in these spiky regions proved to be sufficiently low to affect
+training.
 
 Previously \cite{Gonzalez2016}, the effect of delay on the
 output signal were investigated. It has been found that delay
-is beneficial in case of causal models. Our choice of function approximators are
-restricted to acausal models, so theoretically a speech sample could be synthetised using
-values from the future.
+is beneficial for the case of causal models. In Section \ref{section:nnexperiment},
+a bidirectional recurrent model will be introduced which is not causal. This means, that
+theoretically it is not important to use delays with these architectures,
+as these can use values from the future.
 
 \begin{table}[th]
   \caption{Articulatory information recorded in datasets}
@@ -136,10 +144,11 @@ values from the future.
 
 
 \begin{figure}[t]
-  \begin{center}
-    \scalebox{0.50}{\input{init_pos.pgf}}
   \caption{The visualisation of electrode locations for all samples in
     the MNGU0 dataset at time point \( t = 0 \)}
+  \label{fig:electrodes}
+  \begin{center}
+    \scalebox{0.50}{\input{init_pos.pgf}}
 \end{center}
 \end{figure}
 
@@ -152,16 +161,21 @@ values from the future.
 \end{figure}
 \subsubsection{Speech data processing}
 
-The total combined dataset contains six British male and three British female speakers, with a total
-of 6117 utterances. The recordings from the microphones were all 16kHz. Only the healthy speech has been included from the TORGO dataset. There are 1263 utterances from the MNGU0, 920 from the MOCHA-TIMIT and 3934 from the TORGO dataset.
+
+The total combined dataset contains speech from six British male and three British
+female speakers, with a total of 6117 utterances. The recordings from
+the microphones all have a sampling frequency of 16kHz. Only the healthy speech has been
+included from the TORGO dataset. There are 1263 utterances from the
+MNGU0, 920 from the MOCHA-TIMIT and 3934 from the TORGO dataset.
 
 Vocoder features were extracted with the PyWORLD vocoder \cite{Morise2016}
-and compressed with the PySPTK toolkit available at \url{http://github.com/r9y9/pysptk}.
-The period between consecutive frames were 5 miliseconds. The resulting 40 MFCC
-and 1 power parameters were used to generate static and delta parameters,
-resulting in 82 parameters for the training. As the first step of the MFCC extraction \( \alpha
+and compressed with the PySPTK toolkit available at
+\url{http://github.com/r9y9/pysptk}. The period between consecutive
+frames were 5 miliseconds. The resulting 40 MFCC and 1 power parameters
+were used to generate static and delta parameters, resulting in 82
+parameters for the training. As the first step of the MFCC extraction \( \alpha
 = 0.42 \) were used as a pre-emphasis coefficient. The PyWORLD vocoder
-also provides the $ F_0 $ and BAP values, which were not used for training. 
+also provides the $ F_0 $ and BAP values, which were not used for training.
 
 \subsubsection{Sampling}
 
@@ -169,9 +183,9 @@ It is important that the input and output sample rates of the different
 datasets are matched, because otherwise, the input-output pairs contain
 different amounts of information.  
 
-The sampling frequency of the original EMA signals were 500 Hz, however
+The sampling frequency of the original EMA signals was 500 Hz, however
 the MNGU0 was provided to us downsampled to 200 Hz. To match this frequency,
-the sampling frequency of the other datasets were also downsampled to 200 Hz.
+the sampling frequency of the other datasets was also downsampled to 200 Hz.
 
 For the MNGU0 dataset, NaN (not a number) values occurred when the measurement precision
 was low. These values were simply interpolated linearly. 
@@ -183,8 +197,10 @@ silence, so it is padded with the last element. These are not propagated back du
 
 \subsubsection{Fundamental frequency interpolation}
 
+In this framework, the \( F_0 \) is also used for prediction, thus it
+needs to be processed to be used by the neural network. 
 Previously, it has been found beneficial to take the logarithm of the
-pitch to obtain a continous \( F_0 \) curve.
+pitch to obtain a continous \( F_0 \) curve in the prediction setting.
 When the logarithm is not defined, linear  interpolatation has been done. \cite{Gonzalez2017}
 An alternative method also exists with exponential interpolation
 which is described in \cite{Chen1997}. It has been decided that the
@@ -193,8 +209,9 @@ linear interpolation technique will be used.
 \subsection{Synthesis setup}
 
 The setup for inference and training can be seen on Figure \ref{fig:structure}.
-In the training setup, the MFCCs are given to be predicted only. The pitch and band aperiodicities
-are directly feed to the vocoder during synthesis time, as these don't contain information about articulation. 
+In the training setup, the MFCCs are given to be predicted only.
+The pitch and band aperiodicities are directly fed to the vocoder
+during synthesis time, as these don't contain information about articulation. 
 
 \begin{figure}
   \caption{Red dashed line indicates training-only setup, and blue thick lines indicate inference for speech synthesis. Best viewed in colour.}
@@ -231,59 +248,50 @@ are directly feed to the vocoder during synthesis time, as these don't contain i
     \textbf{MFCC} & 40 + 1 & 40 + 1 & 24 + 1 \\
     \textbf{Delta} & No & Yes & Yes \\
     \textbf{EMA sampling} & 200 Hz & 200 Hz & 100 Hz* \\
-    \textbf{Input standardisation} & Yes & N/A  & Yes \\
-    \textbf{Trajectory smoothing} & No & Yes  & No \\
-    \textbf{Output standardisation} & Yes & Yes & Yes \\
-    \textbf{Vocoder} & STRAIGHT \cite{Kawahara2006} & WORLD  & STRAIGHT \cite{Kawahara2006} \\
+    \textbf{Standardisation} & Yes & Yes & Yes \\
+    \textbf{Smoothing} & No & Yes  & No \\
+    \textbf{Vocoder} & STRAIGHT \cite{Kawahara2006} & WORLD  & STRAIGHT \\
     \bottomrule
   \end{tabular}
   *Upsampled to 200 to match analysis rate
 \end{table}
 
-\section{Experiment}
+\subsection{Neural network design} \label{section:nnexperiment}
 
-\subsection{Neural network experiments} \label{nnexperiment}
+\subsubsection{An empirical look at previous architectures}
 
-\subsubsection{Previous architectures}
-Three recurrent neural networks architectures were trained based on previous
-papers tackling similiar problems. Slight modifications have been made to each
-architecture.
+In this paper, a recurrent neural network will be used in order to
+approximate the articulatory to acoustic mapping. To construct
+this speaker-independent network, previous speaker-dependent architectures
+have been studied, to conclude on an appropriate design.
 
+The most pressing problem of recurrent neural networks were the issue
+of vanishing/exploding gradients. This were somewhat alleviated by the
+introduction of Long-Short Term Memory (LSTM) and Gated Recurrent Units (GRU).
+This is the reason why \cite{Taguchi} used incremental
+training, and probably the reason why \cite{Liu2018} used a learning rate
+scheduler. However, \cite{Gonzalez2017} used Adam optimiser \cite{Kingma2015}
+which is known to manage both of these problems with the minor disadvantage of
+the abscence of good convergence guarantees. The fact that Adam was able
+to obtain similar results without careful parameter-tuning indicated that
+it will be an appropriate candidate as an optimiser. 
 
-Based on \cite{Liu2018}, a bidirectional LSTM was trained with four layers.
-The final layer was a fully connected layer matching the output dimensions.
-This neural network was trained using stochastic gradient descent and
-a learning rate of \( \alpha = 0.01 \).
-ii
-Another publication \cite{Taguchi} used a neural networks with three fully
-connected layers with 128 hidden units, each layer has a linear activation
-function, which is followed by Layer Normalisation and a sigmoid activation
-function. This is followed by two BLSTM layers with 256 hidden units. Finally,
-a fully connected layer is used. This neural network was trained using Grave's RMSProp \cite{Graves2013},with a learning rate of \( \alpha = 0.01 \) .
+All previous publications on speaker-dependent models reported best
+performance on bidirectional architectures, however it was unclear whether
+BLSTM or BGRU architectures are better. Also, \cite{Taguchi} resorted to
+a combination of fully connected and recurrent layers. One fully connected layer
+was also included in all architectures, which effectively performs linear
+regression in the end.
 
-Finally, a BGRU was trained based on the architecture of \cite{Gonzalez2017}.
+In order to determine the best architecture, a pilot study has been
+performed on all three neural networks which are summarised in Table \ref{tab:architectures},
+however all of them were trained with an Adam optimiser, and a learning rate
+of \( 0.003 \), and a batch size of 100 without noise on MNGU0 dataset.
+The best performing neural network was then trained on the entire dataset. 
 
-\subsubsection{Justification for layer choices}
-Determining a good set of architecture and parameter settings is the most difficult part of
-the experiment design. Bidirectional LSTMs have performed the best on predicting the MFCC spectra in
-all related papers. Taguchi uses fully-connected layers and while it not justified in the paper, it
-is reasonable to assume that this does pre-processing of the time-series. 
-
-It can be easily seen mathematically that after after the last LSTM layer, a fully connected layer is also needed as this acts as a linear regression based on the LSTM parameters. This is because the range of the activation function is not sufficient to capture the range of the normalised MFCCs. It is possible to introduce some structural bias by using the same linear regression from each frame, somewhat limiting complexity. 
-
-\subsubsection{Optimisation}
-In terms of the optimisation, Adam \cite{Kingma2015} and Graves's RMSProp is preferred, which is not surpsing due to the
-fact that these known to be better for optimising non-stationary objectives. With the SGD,
-learning rate scheduling had to be used. 
-
-In order to choose the best architecture, all of them have been reimplemented with slight modifications.
-This is a better practice, because the MCD's were interpreted differently on the different papers, i.e the error in the silence frames were not taken into consideration. All of them were compared on the mngu0 dataset.
-The best performing architecture have been retrained on the full dataset, using the preprocessing techniques mentioned above, and an MCD of 5.48 have been obtained.
-
-Due to the imbalanced dataset this immediately begs the question, how this score is reflected speaker-wise. The results can be seen in the table. According to the table below it seems to be that the true result seems to be even better. Note that the validation set sizes are smaller for the TORGO dataset which could introduce bias.
 
 \begin{table}[th]
-  \caption{Performance of speaker-independent articulatory to acoustic neural network}
+  \caption{Performance of speaker-independent articulatory to acoustic neural network for 10-fold cross-validation with 95 \% confidence intervals.}
   \label{tab:all_data}
   \centering
   \footnotesize
@@ -292,42 +300,42 @@ Due to the imbalanced dataset this immediately begs the question, how this score
     \toprule
     \textbf{Dataset} & Multi-speaker & Single-speaker \\
     \midrule
-    \textbf{Combined result} & 5.48 dB & N/A \\  
+    \textbf{Combined result} & 5.31 $\pm$ 0.09 dB & N/A \\  
     \midrule
-    \textbf{MNGU0} & 6.19 dB & 4.77 dB \\
-    \textbf{Female MOCHA-TIMIT} & 5.73 dB & 5.23 dB \\
-    \textbf{Male MOCHA-TIMIT} & \textbf{5.07 dB} & 5.83 dB \\
-    \textbf{TORGO Part 1} & 4.06 dB & N/A \\
-    \textbf{TORGO Part 2} & 4.45 dB & N/A \\
-    \textbf{TORGO Part 3} & 3.86 dB & N/A \\
-    \textbf{TORGO Part 4} & 4.80 dB & N/A \\
-    \textbf{TORGO Part 5} & 4.90 dB & N/A \\
-    \textbf{TORGO Part 6} & 4.54 dB & N/A \\
-    \textbf{TORGO Part 7} & 4.62 dB & N/A \\
-    \textbf{TORGO Part 8} & 14.15 dB & N/A\\
-    \textbf{TORGO Part 9} & 4.54 dB & N/A \\
-    \textbf{TORGO Part 10} & 4.83 dB & N/A \\
+    \textbf{MNGU0} & 5.93 $\pm$ 0.31 dB & 4.77 dB \\
+    \textbf{Female MOCHA-TIMIT} & 5.02 $\pm$ 0.06 dB  & 5.23 dB \\
+    \textbf{Male MOCHA-TIMIT} & \textbf{4.06} $\pm$ 0.06 dB & 5.83 dB \\
+    \textbf{TORGO Part 1} & 4.48 $\pm$ 0.03 dB & N/A \\
+    \textbf{TORGO Part 2} & 4.23 $\pm$ 0.06 dB & N/A \\
+    \textbf{TORGO Part 3} & 4.81 $\pm$ 0.14 dB & N/A \\
+    \textbf{TORGO Part 4} & 4.94 $\pm$ 0.09 dB & N/A \\
+    \textbf{TORGO Part 5} & 4.64 $\pm$ 0.04 dB & N/A \\
+    \textbf{TORGO Part 6} & 4.70 $\pm$ 0.05 dB & N/A \\
+    \textbf{TORGO Part 7} & 4.62 $\pm$ 0.04 dB & N/A \\
+    \textbf{TORGO Part 8} & 15 $\pm$ 0.86 dB & N/A\\
+    \textbf{TORGO Part 9} & 4.63 $\pm$ 0.11 dB & N/A \\
+    \textbf{TORGO Part 10} & 4.85 $\pm$ 0.12 dB & N/A \\
     \bottomrule
   \end{tabular}
 \end{table}
 
 
-\begin{table}[th]
-  \caption{Transfer learning comparison with single speaker models}
-  \label{tab:transfer}
-  \centering
-  \footnotesize
-
-  \begin{tabular}{ r r r}
-    \toprule
-    \textbf{Dataset} & \textbf{Speaker only} & \textbf{Transfer preproc} \\
-    \midrule
-    \textbf{MNGU0} & 4.77 dB & N/A \\
-    \textbf{Female MOCHA-TIMIT} & 5.23 dB & 11.43 dB \\
-    \textbf{Male MOCHA-TIMIT} & 5.88 dB & 7.86 dB \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+%\begin{table}[th]
+%  \caption{Transfer learning comparison with single speaker models}
+%  \label{tab:transfer}
+%  \centering
+%  \footnotesize
+%
+%  \begin{tabular}{ r r r}
+%    \toprule
+%    \textbf{Dataset} & \textbf{Speaker only} & \textbf{Transfer preproc} \\
+%    \midrule
+%    \textbf{MNGU0} & 4.77 dB & N/A \\
+%    \textbf{Female MOCHA-TIMIT} & 5.23 dB & 11.43 dB \\
+%    \textbf{Male MOCHA-TIMIT} & 5.88 dB & 7.86 dB \\
+%    \bottomrule
+%  \end{tabular}
+%\end{table}
 
 \begin{table}[th]
   \caption{Held out validation for different architectures on MNGU0}
@@ -377,78 +385,54 @@ Due to the imbalanced dataset this immediately begs the question, how this score
 For training the mean squared error loss function was used, and for
 evaluation the Mel cepstral distortion (MCD) have been employed. \cite{Kubichek1993}
 
-Ten fold cross-validation was performed to estimate the out-ouf-sample
-generalisation capability of the neural networks.
+For the speaker-independent experiments, ten fold cross-validation was performed
+to estimate the out-ouf-sample generalisation capability of the neural networks.
 
-\subsection{Pathological speech synthesis}
+\subsection{How to construct pathological speech?} \label{section:speech}
 
-Pathological speech synthesis is performed by considering the articulatory
-space and taking knowledge about the change of articulation.
+Using this framework, the problem of making pathological speech
+can be traded for the problem of making pathological articulation and
+feeding pathological articulation through the neural network.
 
-In tongue cancer, articulation of the tongue is impeded. In practice,
-it is found that teaching patients to speak at a slower rate helps these
-articulation problems. Thus, it is hypothesised that is the maximum
-velocity of the tongue that is limited in pathological speech.
+\begin{enumerate}
+\item This is most easily done in a data-driven fashion, by recording healthy
+  and pathological articulation and creating a pathology-dependent mapping
+  in the articulatory space. Because it is a low dimensional space, this
+  is a much easier problem than learning the same mapping in the cepstral
+  space.
+\item Another approach is to perform a signal processing in the articulatory
+  space which reflects some kind of physiological change.
+  \begin{enumerate}
+  \item For example, in tongue cancer, articulation of the tongue is impeded.
+    This could be modelled by restricting the values of the
+    tongue articulatory recordings by zeroing, as due to the normalisation,
+    zeroing will mean a resting tongue state.
+  \item One can also model decrease in velocity via discrete time difference
+    equations, to demonstrate impeded control.
+    \end{enumerate}
+\end{enumerate}
 
-A pathological speech transformation could then be constructed for
-a discretet time signal by first taking the discrete time difference,
-
-\begin{equation}
-  d[t] = x[t] - x[t-1],
-  \label{eq1}
-\end{equation}
-
-where \( x[t] \in \mathbb{R}^T \) is a signal for one particular electrode channel.
-
-The difference signal then can be thresholded using,
-
-\begin{equation}
-  d_p[t] = \text{min}(d[t],c) \quad \text{for} \quad d[t] \geq 0, 
-  \label{eq2}
-\end{equation}
-\begin{equation}
-  d_p[t] = \text{min}(d[t],-c) \quad \text{for} \quad d[t] < 0,
-  \label{eq3}
-\end{equation}
-
-where \( c \in \mathbb{R}^{+} \) is a positive number representing an
-arbitrary threshold.
-
-After obtaining this signal a cumulative sum could be performed to obtain
-the pathological EMA signal
-\begin{equation}
-  p[t] = \sum_{i=0}^{t} x[i].
-  \label{eq4}
-\end{equation}
-
-This signal then could be fed through a feedforward run of a neural network
-to synthetise pathological speech.
 
 \section{Results and discussion}
 
-\subsection{Benchmark results}
-\begin{table}[th]
-  \caption{Comparison of 10-fold CV performance of neural networks}
-  \label{tab:example1}
-  \centering
-  \begin{tabular}{ r r }
-    \toprule
-    \textbf{Architecture} & \textbf{MCD} \\
-    \midrule
-    Liu 2018 & 5.8 dB \\
-    Taguchi 2018 & 6.2 dB               \\
-    Modifed Liu & 6 dB               \\
-    \bottomrule
-  \end{tabular}
-  
-\end{table}
+\subsection{Pilot study}
 
-It is important to note that the original networks were trained on
-single speakers, that is why the MCD values are higher than in the
-original publications.
+The pilot study results are summarised in Table \ref{tab:pilot}.
 
+Based on our training, it seems clear that the GRU architecture was superior to an LSTM
+architecture in our case, when used with an Adam optimiser.
+There is no general consesus whether GRU or LSTM is better for particular
+datasets. \cite{Jozefowicz2015}
 
-\subsection{Learning curves}
+\subsection{Prediction of MFCC values}
+
+The prediction results for the MFCC values are summarised in Table
+\ref{tab:all_data}. Results were all in similar range as previously
+reported values for speaker-dependent datasets, and in our framework
+the speaker-independent architectures clearly performed better than the
+speaker-dependent architectures on the MOCHA-TIMIT datasets.
+
+\subsection{Learning curves (TODO)}
 
 The training set was increased from ten percent of it's total size to it's
 total size in increments of ten percents, and the mean squared error
@@ -483,21 +467,9 @@ relationship is most likely not linear. Secondly, given any noise, achieving
 zero loss is impossible. However, these benchmarks still have merit in
 future experiment design.
 
-\begin{figure}[t]
-  \begin{center}
-    \scalebox{0.50}{\input{retraining_linear.pgf}}
-    \caption{Partial data retraining shows that adding more data would
-      decrease loss. }
-    \label{retraining_linear}
-\end{center}
-\end{figure}
 
-\subsection{What do these neural networks learn?}
+\subsection{What do these neural networks learn?} \label{section:visualisation}
 
-Based on our training, it seems clear that a GRU architecture was superior to an LSTM
-architecture in our case, when used with a more conventional optimiser.
-General consesus of sequential networks seems to be that sometimes GRU and sometimes LSTM is better
-\cite{Jozefowicz2015}
 
 Recently, there have been many advancements in understanding what neural networks learn.
 Convolutional neural networks can be analysed via conventional methods in filter analysis,
@@ -507,27 +479,37 @@ context, so we resort to exploring the activations outputs of the layers.
 
 To make these intelligible, a difference mask is thresholded to find oriented peaks in the spectra.
 On Figure \ref{fig:mask}, two things can be observed. Firstly, line-like boundaries are learned, and their duration indicates these might approximate phone to word level representations. Secondly, as the activations propagate through the deeper layers of the neural networks, these line like boundaries are better approximated.
-iii
-\subsection{Vocoder upper bound}
 
-In our experience, one significant bottleneck in this application is
-the vocoder itself.  To quantify this
+\subsection{The current limitations of the synthesis} \label{section:limitations}
+According to our observations, the quality is bounded more by the
+quality of the vocoder, than the synthesis itself. In terms of root mean square
+error, it has been found that difference between the vocoder resynthesised speech
+and the predicted speech has a mean squared error of 11.15. The mean squared error
+between analysis-resynthesis and the vocoder is 80.32, meaning that
+future improvements should focus on better vocoding rather than better
+acoustic mapping.
+
+
 \subsection{Pathological speech examples}
 
-The pathological speech examples can be listened on the webpage of the
+Some synthetised pathological speech examples can be found on the webpage of the
 author, see \url{http://karkirowle.github.io/paper1}.  
 
+Informal discussions with speech language pathologist indeed confirmed
+that some of these synthetised samples resemble dysarthic or lisping speech,
+but these simple heuristics usually don't incorporate enough knowledge
+about a particulator pathology is to show it consistently.
 \section{Conclusion}
 
 This paper is a proof of concept that it is possible to make pathological
 speech by incorporating changes in an articulatory domain. Benchmarks
 have been also established and an open source repository is also available
-in order to reproduce these results. Using cross-validation as the
-training data increases, bounds have been established on the expected
-amount of data needed for the model to improve.
+in order to reproduce these results. 
 
-It can be concluded that it is possible to make satisfactory quality
-speech synthesis, and it is possible to present some lisping pathologies.
+It can be concluded that it is possible to make speech that resembles
+pathological speech, however further work need to be done on improving
+speech quality and creating models which consistently show a certain
+pathology.
 
 In future work, changes in articulation during oral cancer will be
 investigated using oral cancer to use empirical data for speech synthesis

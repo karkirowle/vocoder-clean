@@ -9,26 +9,21 @@ sns.set()
 
 # Loading data
 
-idx = [1,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1]
+idx = [1.0,0.8,0.6,0.4,0.2,0.1]
+
 curves = len(idx)
-seeds = 10
+seeds = 1
 data2 = np.zeros((100,curves, seeds))
 
 count = 0
 for i,id in enumerate(idx):
     for j in range(seeds):
-        try:
-            data2[:,i,j] = np.load("../copy2/" +
+            data2[:,i,j] = np.load("../../learning_curve_adam/" +
                             str(id) +
-                            "seed" +
-                            str(j+1) +
-                            "test.npy")
-        except:
-            count = count + 1
-            print("Error #" + str(count) + ": Retraining " +str(idx[i])
-                  + ", seed " + str(j))
+                            "seed25test0k.npy")
 
-print(count)
+            
+print(data2)
 
 data= np.mean(data2,axis=2)
 print(data.shape)

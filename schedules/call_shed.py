@@ -17,7 +17,7 @@ class LossHistory(Callback):
                             logs.get('val_loss'),
                             self.i)
 
-#        self.learning_curve[self.i] = logs.get('val_loss')
+        self.learning_curve[self.i] = logs.get('val_loss')
         self.i = self.i + 1
 
 def fetch_callbacks(options,_run,learning_curve):

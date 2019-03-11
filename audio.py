@@ -43,8 +43,8 @@ def debug_resynth(f0_,sp_,ap_,fs,an=2,alpha=0.42,fftbin=1024):
     sp_ = sptk.conversion.mc2sp(sp_, alpha, fftbin)
     ap_ = pw.decode_aperiodicity(ap_, fs, fftbin)
     sound = pw.synthesize(f0_,sp_,ap_,fs,an)
-    sd.play(sound*3,fs)
-    sd.wait()
+#    sd.play(sound*3,fs)
+#    sd.wait()
 
     return sound
 def save_resynth(fname,f0_,sp_,ap_,fs,dtype=np.float32,an=2,alpha=0.42,fftbin=1024):
@@ -69,7 +69,7 @@ def save_resynth(fname,f0_,sp_,ap_,fs,dtype=np.float32,an=2,alpha=0.42,fftbin=10
     sp_ = sptk.conversion.mc2sp(sp_, alpha, fftbin)
     ap_ = pw.decode_aperiodicity(ap_, fs, fftbin)
     sound = pw.synthesize(f0_,sp_,ap_,fs,an)
-    sd.play(sound*3,fs)
-    sd.wait()
+#    sd.play(sound*3,fs)
+#    sd.wait()
     wavfile.write(fname,fs,sound.astype(dtype))
     return sound

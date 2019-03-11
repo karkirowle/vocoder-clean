@@ -591,12 +591,12 @@ def check_paired():
     
 def preprocess_save_combined(alpha=0.42,
                              max_length=1000, fs=16000, val_split=0.2,
-                             noise=False,combined=True, bins_1 = 41,
+                             noise=False,combined=False, bins_1 = 41,
                              bins_2 = 1, normalisation_input = True,
                              normalisation_output = True,
                              channel_number = 14,
                              factor = 80,
-                             save_dir = "processed_comb_test_4_padded"):
+                             save_dir = "processed_comb_test_mngu0_padded"):
     """
     The main entry point to the preprocessing pipeline
 
@@ -651,7 +651,7 @@ def preprocess_save_combined(alpha=0.42,
     puref0set = np.zeros((total_samples,max_length))
     spset = np.zeros((total_samples,max_length,bins_1 * 2))
     apset = np.zeros((total_samples,max_length,bins_2))
-
+    vocoder_error = np.zeros((total_samples))
     # Which ID correspond to which category/dataset, male, female
     cat_id = { "male": [],
                "female": [],
@@ -729,6 +729,16 @@ def preprocess_save_combined(alpha=0.42,
 
         apset[k,:read_in_length,:] = ap[:read_in_length,:]
 
+        sound1 = audio.debug_resynth(puref0set[k,:read_in_length],
+                                     spset[k,:read_in_length],
+                                     apset[k,:read_in_length],
+                                     fs=16000,
+                                     an=5)
+        sound_data = sound_data[:sound1.shape[0]]
+        sound1 = sound1[:sound_data.shape[0]]
+
+        vocoder_error[k] = np.mean(np.sum((sound_data - sound1)**2))
+    print(np.mean(vocoder_error))
     if normalisation_input:
 
         # Normalise the articulographs differently for different references

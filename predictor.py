@@ -83,15 +83,11 @@ def synthesis(args):
     A, B, _ = val_gen.__getitem__(0)
 
     mfcc_normalised = mfcc_model.predict_generator(val_gen)
-    print(mfcc_normalised)
-    print(mfcc_normalised.shape)
     mfcc_p_normalised = mfcc_model.predict(path_test).astype(np.float64)
-    print(mfcc_p_normalised.shape)
 
     f0 = data_loader.load_puref0(options["save_dir"],
                                  options["k"],
                                  args.dataset).astype(np.float64)
-    print(f0.shape)
     bap_gt_u = data_loader.load_bap(options["save_dir"],options["k"],
                                     args.dataset)
     scaler_sp = data_loader.load_scalersp(options["save_dir"])
@@ -102,20 +98,29 @@ def synthesis(args):
     mlpg_p_generated = proc.mlpg_postprocessing(mfcc_p_normalised,
                                                 options["bins_1"],
                                                 scaler_sp)
-
+    mlpg_vocoder = proc.mlpg_postprocessing(Y,
+                                              options["bins_1"],
+                                              scaler_sp)
 
     # ---------------------- SPEECH SYNTHESIS ----------------------------
 
     import sounddevice as sd
     import random
+    import glob
+    import soundfile as sf
+    
+    if (args.dataset == "mngu0"):
+        paths = ["dataset2/*.ema"]
+        files = np.array([np.array(sorted(glob.glob(path))) for path in paths])
 
-    shuffled = random.sample(range(N), 20)
-    for i,id in enumerate(shuffled):
+    diff = np.zeros((N))
+    #shuffled = random.sample(range(N), 20)
+    for id in range(N):
 
         resynth_length = len(np.trim_zeros(f0[id,:],'b'))
 
         if resynth_length > 0:
-            fname = "sounds5/normal/" + str(i) + ".wav"
+            fname = "sounds5/normal/" + str(id) + ".wav"
             print(fname)
             sound1 = audio.save_resynth(fname,f0[id,:resynth_length],
                                 mlpg_generated[id,:resynth_length,:],
@@ -123,19 +128,25 @@ def synthesis(args):
                                 fs=16000,
                                         an=5)
 
-            print(len(utils.get_HNR(sound1,16000)))
 
-            fname = "sounds5/pathological/" + str(i) + ".wav"
+            #fname = "sounds5/pathological/" + str(i) + ".wav"
 
-            sound2 = audio.save_resynth(fname,f0[id,:resynth_length],
-                                mlpg_p_generated[id,:resynth_length,:],
+           # sound2 = audio.save_resynth(fname,f0[id,:resynth_length],
+           #                     mlpg_p_generated[id,:resynth_length,:],
+           #                     bap_gt_u[id,:resynth_length,:],
+           #                     fs=16000,
+            #                    an=5)
+
+            fname = "sounds5/vocoder/" + str(id) + ".wav"
+
+            sound3 = audio.save_resynth(fname,f0[id,:resynth_length],
+                                        mlpg_vocoder[id,:resynth_length],
                                 bap_gt_u[id,:resynth_length,:],
                                 fs=16000,
                                 an=5)
 
-            plt.plot(utils.get_HNR(sound1,16000),"r")
-            plt.plot(utils.get_HNR(sound2,16000),"g")
-            plt.show()
+            diff[id] = np.mean(np.sum((sound1 - sound3)**2))
+    print(np.mean(diff))
 if __name__ == "__main__":
 
     import argparse
