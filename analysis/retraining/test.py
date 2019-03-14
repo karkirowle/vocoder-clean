@@ -18,12 +18,12 @@ data2 = np.zeros((100,curves, seeds))
 count = 0
 for i,id in enumerate(idx):
     for j in range(seeds):
-            data2[:,i,j] = np.load("../../learning_curve_adam/" +
+            data2[:,i,j] = np.load("../../learning_curve_adam2/" +
                             str(id) +
                             "seed25test0k.npy")
-
+            print(data2)
             
-print(data2)
+#print(data2)
 
 data= np.mean(data2,axis=2)
 print(data.shape)

@@ -379,26 +379,27 @@ def figure_reproduction():
     total_samples = len(files)
     electrodes = 14
     init_pos = np.zeros((total_samples,electrodes))
-    labels = ["T3", "T2", "T1", "Jaw", "Upper lip", "Lower lip"]
+    labels = ["T3", "T2", "T1", "Lower incisor", "Upper lip", "Lower lip"]
     for i,fname in enumerate(files):
         data = ema_read(fname)
         init_pos[i,:] = data[0,:]
 
     sns.set_style("white")
     idx = [0,1,2,3,5,6]
+
+    sampled = np.random.choice(range(total_samples),200)
     markers = [".", "v", "^", "<","<", "s","+"]
     for label in idx:
-        plt.scatter(init_pos[:,2*label],
-                    init_pos[:,2*label+1],
-                    marker=markers[label],
-                    color="black")
+        plt.scatter(init_pos[sampled,2*label],
+                    init_pos[sampled,2*label+1],
+                    marker=markers[label])
     plt.xlabel("x position")
     plt.ylabel("y position")
     plt.legend(labels)
     plt.title("Initial position of electrodes in MNGU0 dataset")
     plt.figure(num=1, figsize=(4.2,4.2), dpi=80, facecolor="w", edgecolor="k")
-    #plt.show()
-    plt.savefig("paper/init_pos.pgf")
+    plt.show()
+    #plt.savefig("paper/init_pos.pgf")
 
     return 0
 def sp_delta_generation(sp,mfcc_bins,alpha,hop_length):
