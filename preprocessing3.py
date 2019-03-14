@@ -250,7 +250,7 @@ def visualise_torgo():
         #plt.show()
     numFrames = data.shape[1]
     fig = plt.figure()
-
+    
     scats = []
     for channel_idx in range(channels):
         scats.append(plt.scatter(data[:,0,channel_idx * 2],
@@ -389,17 +389,24 @@ def figure_reproduction():
 
     sampled = np.random.choice(range(total_samples),200)
     markers = [".", "v", "^", "<","<", "s","+"]
+
+    img = plt.imread("arthead.png")
+    plt.imshow(img, extent=[-6.75, 21.25, -10, 8])
+
     for label in idx:
         plt.scatter(init_pos[sampled,2*label],
                     init_pos[sampled,2*label+1],
                     marker=markers[label])
     plt.xlabel("x position")
     plt.ylabel("y position")
-    plt.legend(labels)
+    plt.xlim([-5, 10])
+    leg = plt.legend(labels,loc=3,frameon=False)
+    leg.get_frame().set_linewidth(0.0)
     plt.title("Initial position of electrodes in MNGU0 dataset")
-    plt.figure(num=1, figsize=(4.2,4.2), dpi=80, facecolor="w", edgecolor="k")
-    plt.show()
-    #plt.savefig("paper/init_pos.pgf")
+    fig = plt.figure(num=1, figsize=(4.2,4.2), dpi=80, facecolor="w",
+                     edgecolor="k")
+    
+    plt.savefig("paper/init_pos.pgf")
 
     return 0
 def sp_delta_generation(sp,mfcc_bins,alpha,hop_length):
