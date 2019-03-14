@@ -14,48 +14,50 @@ Database file #1: paper1.bib
 Warning--missing publisher in Benesty2009
 Warning--empty journal in Taguchi
 Warning--empty year in Taguchi
-Warning--empty journal in Graves2013
+Warning--empty author in pysptk
+Warning--empty journal in pysptk
+Warning--empty year in pysptk
 
 Done.
-You've used 17 entries,
+You've used 20 entries,
             4039 wiz_defined-function locations,
-            919 strings with 10828 characters,
-and the built_in function-call counts, 9478 in all, are:
-= -- 750
-> -- 252
+            931 strings with 11046 characters,
+and the built_in function-call counts, 10398 in all, are:
+= -- 812
+> -- 261
 < -- 44
-+ -- 128
-- -- 51
-* -- 462
-:= -- 1577
-add.period$ -- 33
-call.type$ -- 17
-change.case$ -- 16
++ -- 133
+- -- 53
+* -- 497
+:= -- 1742
+add.period$ -- 39
+call.type$ -- 20
+change.case$ -- 19
 chr.to.int$ -- 102
-cite$ -- 21
-duplicate$ -- 736
-empty$ -- 787
-format.name$ -- 65
-if$ -- 2094
+cite$ -- 26
+duplicate$ -- 823
+empty$ -- 888
+format.name$ -- 67
+if$ -- 2287
 int.to.chr$ -- 0
-int.to.str$ -- 17
-missing$ -- 131
-newline$ -- 84
-num.names$ -- 17
-pop$ -- 339
+int.to.str$ -- 20
+missing$ -- 149
+newline$ -- 97
+num.names$ -- 19
+pop$ -- 403
 preamble$ -- 1
 purify$ -- 0
 quote$ -- 2
-skip$ -- 726
+skip$ -- 795
 stack$ -- 0
-substring$ -- 254
-swap$ -- 505
+substring$ -- 257
+swap$ -- 541
 text.length$ -- 10
 text.prefix$ -- 0
 top$ -- 5
-type$ -- 17
-warning$ -- 4
-while$ -- 33
-width$ -- 19
-write$ -- 179
-(There were 4 warnings)
+type$ -- 20
+warning$ -- 6
+while$ -- 35
+width$ -- 22
+write$ -- 203
+(There were 6 warnings)

@@ -27,30 +27,30 @@
 \maketitle
 % 
 \begin{abstract}
-  \blindtext[1]
+
+  This paper presents a technique to synthetise speech that is pathological on the articulation level.
+  The technique presented considers a vocoder combined with a speaker-independent articulatory to acoustic neural network using electromagnetic articulography recordings from the three largest articulatory datasets. A speech language pathologist indicated that the synthetised samples reflect some qualities of disordered speech. A visualisation technique is also described to shed light on what these neural networks learn.
 \end{abstract}
 \noindent\textbf{Index Terms}: computational paralinguistics, articulatory-to-acoustic
 speech synthesis, deep learning, pathological speech
 
 \section{Introduction}
-iiiiiiiiiii
 Understanding how articulation affects speech is a central question in speech
 research. The source-filter model was one of the first models to tackle this
 problem by discovering that speech production could be described by
 the geometry of the vocal tract and the glottal wave. Mathematically,
 the source-filter model synthetises speech by exciting an autoregressive (AR) model with a
 signal, where the AR coefficients capture the geometry of the
-vocal tract, which is also represented by an area function \cite{Benesty2009}. 
-
+vocal tract, which is also represented by an area function \cite{Benesty2009} \cite{Fant1981}.
 Recently, deep learning methods became popular
 to understand articulation. These methods use a measurement tool,
-called electromagnetic articulography to obtain articulation data 
+called electromagnetic articulography (EMA) to obtain articulation data 
 \cite{Aryal2016} \cite{Taguchi} \cite{Liu2018} along with recurrent
 neural networks, which are neural networks that are able to deal with
 the sequential nature of data \cite{Hochreiter1997}. Data-driven methods became of interest also
 in real-time speech synthesis. The efficacy of real-time speech synthesis
 has been investigated using a technique called permanent magnetic articulography
-by \cite{Gonzalez2017}, which gave understandable
+by \cite{Gonzalez2017}, which gave intelligeble
 speech.
 
 The conclusion of these endeavours were that while it is possible to
@@ -65,15 +65,20 @@ meaning the pitch remains natural. Thus, it is proposed that the \( F_0 \) could
 be simply obtained through vocoder analysis and only predict the cepstral
 values through articulation to model pathologies.
 
+Pathological speech synthesis could have many potential applications, for example, improving
+pathological speech detection using synthetic data. It could be also used as a clinical tool,
+in patient counselling to prepare them for post-operative speech quality. A deeper understanding
+of the articulatory to speech relationship could also offer improvements in speech therapy tools.
+
 In this paper, a technique is described which combines healthy speech
 from the three largest articulatory datasets, MNGU0 \cite{Richmond2011},
 MOCHA-TIMIT and TORGO \cite{Rudzicz2012} for the first time, in order to
 create a general speaker-independent articulatory to acoustic model.
 
-\vspace{1em}
+\vspace{0.5em}
 The main contributions of this paper are,
 \begin{itemize}
-\itemsep0em
+\setlength\itemsep{-0.3em}
 \item a description of a method for speaker-independent MFCC prediction in Section \ref{section:method}
 \item a technique to incorporate articulation domain-knowledge into pathological
   speech synthesis in Section \ref{section:speech} 
@@ -81,47 +86,31 @@ The main contributions of this paper are,
 \item an attempt to shed light on what these neural networks might learn in Section \ref{section:visualisation}
 \end{itemize}
 
-Our code is also available as a Github repository on the link
-\url{https://github.com/karkirowle/vocoder-clean}.
+The research code is also available as a Github repository online. \cite{Halpern2019}
 
 \section{Method} \label{section:method}
 \subsection{Dataset preprocessing}
 
+Preprocessing technique of previous publications are summarised in Table \ref{tab:example}.
 \subsubsection{Electrode preprocessing}
 
-Electromagnetic articulography (EMA) is a measurement technology
-which enables us to model articulation. Each dataset contains recordings
-using this technology, however the articulators recorded are slightly
-different, meaning particular attention has to be paid to align these datasets.
-An example of EMA recording locations are shown on Figure \ref{fig:electrodes}.
-
-Firstly, it has been decided that seven electrodes will be used for this
-experiment out of the total eight, Table \ref{tab:electrodes} includes
+Articulators recorded are slightly different, meaning particular attention has to be paid to align these datasets. An example of EMA recording locations are shown on Figure \ref{fig:electrodes}. Seven electrodes were used for this experiment out of the total eight, Table \ref{tab:electrodes} includes
 the alignment of the channels that were used. This ensures that each
 input channel records reasonably similar information, meaning that the
-channels should have similar variance.
-
-However, this alone does not deal with the speaker-wise variations. In
-order to ensure that the input represents a general articulation distribution,
-the articulatory trajectories of the datasets were standardised to have
-zero mean and unit variance on a per speaker basis. This alleviates some
-of the deviations, but does not alleviate problems if an electrode
+channels should have similar variance. These are then standardised on a per speaker
+basis. These alleviate some
+of the speaker-wise deviations, but does not alleviate problems if an electrode
 falls off during the experiment or if an electrode needs to be changed.
 
-In the case of the TORGO dataset, some of the channels contained spikes, which
-were attached to the dataset. If the spikes happened in electrode channels,
-which were used by the neural network, then these have been excluded.
-This decision has been made after implementing some simple signal
-processing algorithms to remove these spikes. The signal to noise
-ratio in these spiky regions proved to be sufficiently low to affect
+In the case of the TORGO dataset, some of the channels contained artifacts,
+these have been excluded. The signal to noise
+ratio in these spiky regions was low enough to affect
 training.
 
 Previously \cite{Gonzalez2016}, the effect of delay on the
 output signal were investigated. It has been found that delay
 is beneficial for the case of causal models. In Section \ref{section:nnexperiment},
-a bidirectional recurrent model will be introduced which is not causal. This means, that
-theoretically it is not important to use delays with these architectures,
-as these can use values from the future.
+a bidirectional recurrent model will be introduced which is not causal, meaning there is no need for delays.
 
 \begin{table}[th]
   \caption{Articulatory information recorded in datasets}
@@ -144,8 +133,8 @@ as these can use values from the future.
 
 
 \begin{figure}[t]
-  \caption{The visualisation of electrode locations for all samples in
-    the MNGU0 dataset at time point \( t = 0 \)}
+  \caption{The visualisation of electrode locations for 300 samples from
+    the MNGU0 dataset at their initial position.}
   \label{fig:electrodes}
   \begin{center}
     \scalebox{0.50}{\input{init_pos.pgf}}
@@ -162,15 +151,14 @@ as these can use values from the future.
 \subsubsection{Speech data processing}
 
 
-The total combined dataset contains speech from six British male and three British
-female speakers, with a total of 6117 utterances. The recordings from
-the microphones all have a sampling frequency of 16kHz. Only the healthy speech has been
-included from the TORGO dataset. There are 1263 utterances from the
+The total dataset contains speech from six British male and three British
+female speakers, with a total of 6117 utterances, approximately 10 hours of recorded
+speech. The recordings from the microphones all have a sampling frequency of 16kHz.
+Only the healthy speech has been included from the TORGO dataset. There are 1263 utterances from the
 MNGU0, 920 from the MOCHA-TIMIT and 3934 from the TORGO dataset.
 
 Vocoder features were extracted with the PyWORLD vocoder \cite{Morise2016}
-and compressed with the PySPTK toolkit available at
-\url{http://github.com/r9y9/pysptk}. The period between consecutive
+and compressed with the PySPTK toolkit \cite{pysptk}. The period between consecutive
 frames were 5 miliseconds. The resulting 40 MFCC and 1 power parameters
 were used to generate static and delta parameters, resulting in 82
 parameters for the training. As the first step of the MFCC extraction \( \alpha
@@ -179,16 +167,12 @@ also provides the $ F_0 $ and BAP values, which were not used for training.
 
 \subsubsection{Sampling}
 
-It is important that the input and output sample rates of the different
-datasets are matched, because otherwise, the input-output pairs contain
-different amounts of information.  
-
 The sampling frequency of the original EMA signals was 500 Hz, however
 the MNGU0 was provided to us downsampled to 200 Hz. To match this frequency,
 the sampling frequency of the other datasets was also downsampled to 200 Hz.
 
 For the MNGU0 dataset, NaN (not a number) values occurred when the measurement precision
-was low. These values were simply interpolated linearly. 
+was low. These values were interpolated linearly. 
 
 To ease training, the input signals were either truncated or padded
 so there were a total of \( T = 1000 \) samples for each training example.
@@ -202,14 +186,12 @@ needs to be processed to be used by the neural network.
 Previously, it has been found beneficial to take the logarithm of the
 pitch to obtain a continous \( F_0 \) curve in the prediction setting.
 When the logarithm is not defined, linear  interpolatation has been done. \cite{Gonzalez2017}
-An alternative method also exists with exponential interpolation
-which is described in \cite{Chen1997}. It has been decided that the
-linear interpolation technique will be used. 
+An alternative method with exponential interpolation is described in \cite{Chen1997}.
 
 \subsection{Synthesis setup}
 
-The setup for inference and training can be seen on Figure \ref{fig:structure}.
-In the training setup, the MFCCs are given to be predicted only.
+The setup for inference and training can be seen in Figure \ref{fig:structure}.
+In the training setup, only the MFCCs are given.
 The pitch and band aperiodicities are directly fed to the vocoder
 during synthesis time, as these don't contain information about articulation. 
 
@@ -253,7 +235,7 @@ during synthesis time, as these don't contain information about articulation.
     \textbf{Vocoder} & STRAIGHT \cite{Kawahara2006} & WORLD  & STRAIGHT \\
     \bottomrule
   \end{tabular}
-  *Upsampled to 200 to match analysis rate
+  *Upsampled to 200 Hz to match analysis rate
 \end{table}
 
 \subsection{Neural network design} \label{section:nnexperiment}
@@ -276,7 +258,7 @@ the abscence of good convergence guarantees. The fact that Adam was able
 to obtain similar results without careful parameter-tuning indicated that
 it will be an appropriate candidate as an optimiser. 
 
-All previous publications on speaker-dependent models reported best
+Previous publications on speaker-dependent models reported best
 performance on bidirectional architectures, however it was unclear whether
 BLSTM or BGRU architectures are better. Also, \cite{Taguchi} resorted to
 a combination of fully connected and recurrent layers. One fully connected layer
@@ -299,7 +281,8 @@ The best performing neural network was then trained on the entire dataset.
   \begin{tabular}{ r r r }
     \toprule
     \textbf{Dataset} & Multi-speaker & Single-speaker \\
-    \midrule
+    & MCD & MCD \\
+    \midrule 
     \textbf{Combined result} & 5.31 $\pm$ 0.09 dB & N/A \\  
     \midrule
     \textbf{MNGU0} & 5.93 $\pm$ 0.31 dB & 4.77 dB \\
@@ -338,24 +321,9 @@ The best performing neural network was then trained on the entire dataset.
 %\end{table}
 
 \begin{table}[th]
-  \caption{Held out validation for different architectures on MNGU0}
-  \label{tab:pilot}
-  \centering
-  \footnotesize
-
-  \begin{tabular}{ r r r r }
-    \toprule
-    \textbf{Author} & \textbf{MCD} \\
-    \midrule
-    \textbf{Gonzalez} & 4.77 dB \\
-    \textbf{Taguchi} & 7.28 dB \\
-    \textbf{Liu} & 4.84 dB \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\begin{table}[th]
-  \caption{Comparison of different trainng methods}
+  \caption{Comparison of different training methods used in previous publications with the
+    results of the pilot study using held-out validation. The method described in the paper of
+  Gonzalez performed best.}
   \label{tab:architectures}
   \centering
   \footnotesize
@@ -376,10 +344,12 @@ The best performing neural network was then trained on the entire dataset.
     \textbf{Maximum epochs} & 32 & N/A & 100 \\
     \textbf{Batch size} & N/A & 8 & 100 \\
     \textbf{Incremental training} & No & Yes & Yes \\
+    \textbf{MCD***} & 4.84 dB & 7.28 dB & 4.77 dB \\
     \bottomrule
   \end{tabular}
   * with decay after Epoch 11 \\
-  ** from author communication
+  ** from author communication \\
+  *** results of our training with Adam optimiser
 \end{table}
 
 For training the mean squared error loss function was used, and for
@@ -388,29 +358,18 @@ evaluation the Mel cepstral distortion (MCD) have been employed. \cite{Kubichek1
 For the speaker-independent experiments, ten fold cross-validation was performed
 to estimate the out-ouf-sample generalisation capability of the neural networks.
 
-\subsection{How to construct pathological speech?} \label{section:speech}
+\subsection{Articulatory space modification} \label{section:speech}
 
 Using this framework, the problem of making pathological speech
 can be traded for the problem of making pathological articulation and
 feeding pathological articulation through the neural network.
 
-\begin{enumerate}
-\item This is most easily done in a data-driven fashion, by recording healthy
-  and pathological articulation and creating a pathology-dependent mapping
-  in the articulatory space. Because it is a low dimensional space, this
-  is a much easier problem than learning the same mapping in the cepstral
-  space.
-\item Another approach is to perform a signal processing in the articulatory
-  space which reflects some kind of physiological change.
-  \begin{enumerate}
-  \item For example, in tongue cancer, articulation of the tongue is impeded.
-    This could be modelled by restricting the values of the
-    tongue articulatory recordings by zeroing, as due to the normalisation,
-    zeroing will mean a resting tongue state.
-  \item One can also model decrease in velocity via discrete time difference
-    equations, to demonstrate impeded control.
-    \end{enumerate}
-\end{enumerate}
+In order to make the articulation pathological, two methods were employed.
+The first method fixes the position of the tongue tip in the initial position.
+The second method decreases the velocity of the tongue via thresholding discrete time differences,
+and reconstructing the position with performing a cumulative sum.
+
+
 
 
 \section{Results and discussion}
@@ -467,7 +426,6 @@ relationship is most likely not linear. Secondly, given any noise, achieving
 zero loss is impossible. However, these benchmarks still have merit in
 future experiment design.
 
-
 \subsection{What do these neural networks learn?} \label{section:visualisation}
 
 
@@ -482,10 +440,11 @@ On Figure \ref{fig:mask}, two things can be observed. Firstly, line-like boundar
 
 \subsection{The current limitations of the synthesis} \label{section:limitations}
 According to our observations, the quality is bounded more by the
-quality of the vocoder, than the synthesis itself. In terms of root mean square
-error, it has been found that difference between the vocoder resynthesised speech
-and the predicted speech has a mean squared error of 11.15. The mean squared error
-between analysis-resynthesis and the vocoder is 80.32, meaning that
+quality of the vocoder, than the synthesis itself. In terms of mean square
+error (MSE), it has been found that difference between the vocoder resynthesised speech
+and the predicted speech has an MSE of 11. The MSE
+between analysis-resynthesis and the vocoder is 80. That means that 88\% of the performance loss
+is due to the vocoder analysis-resynthesis. This indicates that
 future improvements should focus on better vocoding rather than better
 acoustic mapping.
 
@@ -493,12 +452,19 @@ acoustic mapping.
 \subsection{Pathological speech examples}
 
 Some synthetised pathological speech examples can be found on the webpage of the
-author, see \url{http://karkirowle.github.io/paper1}.  
-
+author, see \cite{Speech2019}.
 Informal discussions with speech language pathologist indeed confirmed
-that some of these synthetised samples resemble dysarthic or lisping speech,
+that some of these synthetised samples resemble dysarthic or disordered speech,
 but these simple heuristics usually don't incorporate enough knowledge
-about a particulator pathology is to show it consistently.
+about a particulator pathology to show it consistently.
+
+This confirms that that the framework can be used as platform to implement a
+pathological articulation by reflecting the physiological changes in the articulatory
+space. This is most easily done in a data-driven fashion, by recording healthy
+and pathological articulation and creating a pathology-dependent mapping
+in the articulatory space. Because it is a low dimensional space, this
+is a much easier problem than learning the same mapping in the cepstral
+
 \section{Conclusion}
 
 This paper is a proof of concept that it is possible to make pathological
@@ -507,19 +473,19 @@ have been also established and an open source repository is also available
 in order to reproduce these results. 
 
 It can be concluded that it is possible to make speech that resembles
-pathological speech, however further work need to be done on improving
+pathological speech from impaired articulation. Further work needs to be done on improving
 speech quality and creating models which consistently show a certain
 pathology.
-
-In future work, changes in articulation during oral cancer will be
-investigated using oral cancer to use empirical data for speech synthesis
-instead of physical considerations.
 
 \section{Acknowledgements}
 This project has received funding from the European Union's Horizon
 2020 research and innovation programme under Marie Sklodowska-Curie
 grant agreement No 766287.
 This work was carried out on the Dutch national e-infrastructure with the support of SURF Cooperative.
+The Department of Head and Neck Oncology and surgery of the Netherlands
+Cancer Institute receives a research grant from Atos Medical (Malmö,
+Sweden), which contributes to the existing infrastructure for quality of
+life research.
 
 \bibliographystyle{IEEEtran}
 

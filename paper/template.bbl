@@ -28,6 +28,10 @@ J.~Benesty, M.~M. Sondhi, Y.~Huang, and S.~Greenberg, \emph{{Springer Handbook
   \url{http://scitation.aip.org/content/asa/journal/jasa/126/4/10.1121/1.3203918}
 \BIBentrySTDinterwordspacing
 
+\bibitem{Fant1981}
+G.~Fant, ``{The source filter concept in voice production},'' \emph{Quarterly
+  Progress and Status Report}, 1981.
+
 \bibitem{Aryal2016}
 \BIBentryALTinterwordspacing
 S.~Aryal and R.~Gutierrez-Osuna, ``{Data driven articulatory synthesis with
@@ -74,6 +78,12 @@ F.~Rudzicz, A.~K. Namasivayam, and T.~Wolff, ``{The TORGO database of acoustic
   and articulatory speech from speakers with dysarthria},'' \emph{Language
   Resources and Evaluation}, 2012.
 
+\bibitem{Halpern2019}
+\BIBentryALTinterwordspacing
+B.~Halpern, ``{Articulatory vocoder}.'' [Online]. Available:
+  \url{http://github.com/karkirowle/vocoder-clean}
+\BIBentrySTDinterwordspacing
+
 \bibitem{Gonzalez2016}
 J.~A. Gonzalez, L.~A. Cheah, J.~M. Gilbert, J.~Bai, S.~R. Ell, P.~D. Green, and
   R.~K. Moore, ``{A silent speech system based on permanent magnet
@@ -85,6 +95,11 @@ M.~Morise, F.~Yokomori, and K.~Ozawa, ``{WORLD: A vocoder-based high-quality
   speech synthesis system for real-time applications},'' \emph{IEICE
   Transactions on Information and Systems}, 2016.
 
+\bibitem{pysptk}
+\BIBentryALTinterwordspacing
+``{PySPTK toolkit}.'' [Online]. Available: \url{http://github.com/r9y9/pysptk}
+\BIBentrySTDinterwordspacing
+
 \bibitem{Chen1997}
 C.~J. Chen, R.~A. Gopinath, M.~D. Monkowski, M.~A. Picheny, and K.~Shen, ``{New
   methods in continuous Mandarin speech recognition.}'' \emph{5th European
@@ -94,12 +109,6 @@ C.~J. Chen, R.~A. Gopinath, M.~D. Monkowski, M.~A. Picheny, and K.~Shen, ``{New
 H.~Kawahara, ``{STRAIGHT, exploitation of the other aspect of VOCODER:
   Perceptually isomorphic decomposition of speech sounds},'' \emph{Acoustical
   Science and Technology}, 2006.
-
-\bibitem{Graves2013}
-\BIBentryALTinterwordspacing
-A.~Graves, ``{Generating Sequences With Recurrent Neural Networks},'' aug 2013.
-  [Online]. Available: \url{http://arxiv.org/abs/1308.0850}
-\BIBentrySTDinterwordspacing
 
 \bibitem{Kingma2015}
 D.~P. Kingma and J.~L. Ba, ``{Adam: A method for stochastic gradient
@@ -120,5 +129,11 @@ R.~F. Kubichek, ``{Mel-cepstral Distance Measure for Objective Speech Quality
 \bibitem{Jozefowicz2015}
 R.~Jozefowicz, W.~Zaremba, and I.~Sutskever, ``{An Empirical Exploration of
   Recurrent Network Architectures},'' \emph{JMLR}, 2015.
+
+\bibitem{Speech2019}
+\BIBentryALTinterwordspacing
+B.~Halpern, ``{Speech Examples}.'' [Online]. Available:
+  \url{http://karkirowle.github.io/paper1}
+\BIBentrySTDinterwordspacing
 
 \end{thebibliography}
