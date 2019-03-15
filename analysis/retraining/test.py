@@ -12,12 +12,12 @@ def decay(signal,tau):
         if i == 1:
             out[i] = signal[i]
         else:
-            out[i] = out[i-1]*tau + signal[i]
+            out[i] = out[i-1]*tau + (1-tau)*signal[i]
     return out
 # Loading data
 
 #idx = [1.0,0.8,0.6,0.4,0.2]
-idx = [0.8,0.6,0.4,0.2]
+idx = [1.0,0.8,0.6,0.4,0.2]
 
 curves = len(idx)
 seeds = 1
@@ -52,11 +52,13 @@ for i in range(curves - 1):
 plt.plot(data)
 plt.xlabel("Epochs")
 plt.ylabel("Validation loss")
-plt.legend(["80% of training set", "60% of training set", "40% of training set",
+plt.legend(["100% of traiing set",
+            "80% of training set", "60% of training set", "40% of training set",
             "20% of training set"])
 plt.title("Adding more data helps generalisation performance")
 #plt.show()
 plt.savefig("../../paper/retraining_lc.pgf")
+
 
 
 
