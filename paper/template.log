@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2018.10.14)  14 MAR 2019 14:36
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2018.10.14)  15 MAR 2019 09:29
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -855,46 +855,35 @@ Overfull \hbox (17.40076pt too wide) in paragraph at lines 331--350
  [][] 
  []
 
-
-LaTeX Warning: Reference `tab:pilot' on page 3 undefined on input line 379.
-
 [3] (./retraining.pgf)
 Overfull \hbox (3.64174pt too wide) in paragraph at lines 403--405
  [] 
  []
 
-
-LaTeX Warning: Reference `retraining_linear' on page 4 undefined on input line 
-420.
-
 Missing character: There is no Ã in font ptmr7t!
 Missing character: There is no ¶ in font ptmr7t!
 (./template.bbl [4]) [5
 
-] (./template.aux)
-
-LaTeX Warning: There were undefined references.
-
- ) 
+] (./template.aux) ) 
 Here is how much of TeX's memory you used:
- 17071 strings out of 492982
- 352734 string characters out of 6134895
+ 17069 strings out of 492982
+ 352704 string characters out of 6134895
  809641 words of memory out of 5000000
- 20231 multiletter control sequences out of 15000+600000
+ 20229 multiletter control sequences out of 15000+600000
  40881 words of font info for 90 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 55i,9n,78p,446b,875s stack positions out of 5000i,500n,10000p,200000b,80000s
-{/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/share/texliv
-e/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></usr/share/texlive/texmf
--dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/share/texlive/texmf-dist/fo
-nts/type1/public/amsfonts/cm/cmr8.pfb></usr/share/texlive/texmf-dist/fonts/type
-1/public/amsfonts/cm/cmr9.pfb></usr/share/texlive/texmf-dist/fonts/type1/public
-/amsfonts/cm/cmsy8.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/courier/u
-crr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/helvetic/uhvr8a.pfb></
-usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/share/texli
-ve/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/share/texlive/texmf-dist/f
-onts/type1/urw/times/utmri8a.pfb>
-Output written on template.pdf (5 pages, 194630 bytes).
+ 55i,9n,78p,447b,875s stack positions out of 5000i,500n,10000p,200000b,80000s
+{/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc}
+</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></usr/s
+hare/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/share/tex
+live/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/share/texlive/tex
+mf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></usr/share/texlive/texmf-dist/
+fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/share/texlive/texmf-dist/fonts/t
+ype1/urw/courier/ucrr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/helv
+etic/uhvr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb
+></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/share/te
+xlive/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
+Output written on template.pdf (5 pages, 193991 bytes).
 PDF statistics:
  99 PDF objects out of 1000 (max. 8388607)
  55 compressed objects within 1 object stream

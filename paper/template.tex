@@ -29,7 +29,7 @@
 \begin{abstract}
 
   This paper presents a technique to synthetise speech that is pathological on the articulation level.
-  The technique presented considers a vocoder combined with a speaker-independent articulatory to acoustic neural network using electromagnetic articulography recordings from the three largest articulatory datasets. A speech language pathologist indicated that the synthetised samples reflect some qualities of disordered speech. A visualisation technique is also described to shed light on what these neural networks learn.
+  The technique presented considers a vocoder combined with a speaker-independent articulatory to acoustic neural network using electromagnetic articulography recordings using the three largest articulatory datasets. A speech language pathologist indicated that the synthetised samples reflect some qualities of disordered speech. A visualisation technique is also described to shed light on what these neural networks learn.
 \end{abstract}
 \noindent\textbf{Index Terms}: computational paralinguistics, articulatory-to-acoustic
 speech synthesis, deep learning, pathological speech
@@ -376,7 +376,7 @@ and reconstructing the position with performing a cumulative sum.
 
 \subsection{Pilot study}
 
-The pilot study results are summarised in Table \ref{tab:pilot}.
+The pilot study results are summarised in Table \ref{tab:example}.
 
 Based on our training, it seems clear that the GRU architecture was superior to an LSTM
 architecture in our case, when used with an Adam optimiser.
@@ -391,10 +391,10 @@ reported values for speaker-dependent datasets, and in our framework
 the speaker-independent architectures clearly performed better than the
 speaker-dependent architectures on the MOCHA-TIMIT datasets.
 
-\subsection{Learning curves (TODO)}
+\subsection{Learning curves}
 
-The training set was increased from ten percent of it's total size to it's
-total size in increments of ten percents, and the mean squared error
+The neural network was retrained using incrementally more training data in twenty
+percent batches. The mean squared error (MSE)
 was calculated at all epochs of training for the validation set, which
 can be seen on Figure \ref{learning_curve}.
 
@@ -408,18 +408,9 @@ can be seen on Figure \ref{learning_curve}.
 \end{figure}
 
 
-After that, a paired t-test was performed to answer whether there is
-a statistically significant improvement with each addition of the training data.
-It has been found that for each addition, the paired t-test resulted in statistically
-significant results, which indicates that it is very likely that addition
-of more data improves the model.
-
-To estimate how much data would be needed to achieve a ''perfect'' performance,
-assuming a linear fit, the mean of the validation loss in last 5 epochs
-were taken and regressed againts the amount of training data included in
-number of samples. This fit can be seen on Figure \ref{retraining_linear}.
-Taking the ratio of the slope and the intercept, approximately 8382
-training data point would be needed.
+After that, a paired t-test was performed, and it has been found that there is
+a statistically significant improvement with each addition of the training data,
+meaning more data improves the model.
 
 Again, note that there are several limitations of this assumption. First, the
 relationship is most likely not linear. Secondly, given any noise, achieving
