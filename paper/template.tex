@@ -12,7 +12,10 @@
 \tikzstyle{input} = [coordinate]
 \tikzstyle{output} = [coordinate]
 \tikzstyle{pinstyle} = [pin edge={to-,thin,black}]
-
+\setlength{\abovecaptionskip}{-5pt}
+\setlength{\belowcaptionskip}{-5pt}
+\widowpenalty10000
+\clubpenalty10000
 \title{Towards pathological speech synthesis from articulation}
 \name{Bence Halpern$^1$$^2$, Rob J. J. H. van Son$^1$, Michiel W. M.
   van den Brekel$^1$$^2$}
@@ -27,20 +30,19 @@
 \maketitle
 % 
 \begin{abstract}
-
   This paper presents a technique to synthetise speech that is pathological on the articulation level.
-  The technique presented considers a vocoder combined with a speaker-independent articulatory to acoustic neural network using electromagnetic articulography recordings from the three largest articulatory datasets. A speech language pathologist indicated that the synthetised samples reflect some qualities of disordered speech. A visualisation technique is also described to shed light on what these neural networks learn. Further directions are pointed out on how to improve speech quality.
+  The technique presented considers a vocoder combined with a speaker-independent articulatory to acoustic neural network using electromagnetic articulography recordings from the three largest articulatory datasets.
+  A visualisation technique is also described to shed light on what these neural networks learn. Further directions are pointed out on how to improve speech quality.
 \end{abstract}
 \noindent\textbf{Index Terms}: computational paralinguistics, articulatory-to-acoustic
 speech synthesis, deep learning, pathological speech
 
 \section{Introduction}
 
-At first, the application of pathological speech synthesis might be unclear to the reader.
-However, this area could have many
-potential applications. One of them is the creation of synthetic data which could be
+Synthetising pathological speech could enable many potential applications.
+One of them is the creation of synthetic data which could be
 used as training data for pathological speech detection. It could be also used as a
-clinical tool for counselling patients about post-operative outcomes. Additionally, a
+clinical tool for counselling patients about post-operative speech outcomes. Additionally, a
 deeper understanding of the articulatory to speech relationship could offer improvement
 in speech therapy tools.
 
@@ -58,9 +60,7 @@ neural networks, which are function approximators that are able to deal with
 the sequential nature of data \cite{Hochreiter1997}. Data-driven methods became of interest also
 in real-time speech synthesis, using a technique called permanent magnetic articulography
 by \cite{Gonzalez2017}, resulting in intelligeble
-speech.
-
-The conclusion of these endeavours were that while it is possible to
+speech. The conclusion of these endeavours were that while it is possible to
 predict some of the pitch from articulation, the quality suffers.
 However, it is possible to obtain satisfactory values for the
 cepstrum.
@@ -74,12 +74,11 @@ values through articulation to model pathologies.
 
 In this paper, a technique is described which combines healthy speech
 from the three largest articulatory datasets, MNGU0 \cite{Richmond2011},
-MOCHA-TIMIT and TORGO \cite{Rudzicz2012} for the first time, in order to
+MOCHA-TIMIT and TORGO \cite{Rudzicz2012}, in order to
 create a general speaker-independent articulatory to acoustic model and
-introduce a novel framework for pathological speech synthesis.
+introduce a framework for pathological speech synthesis.
 
-\vspace{0.5em}
-The main contributions of this paper are,
+\noindent The main contributions of this paper are,
 \begin{itemize}
 \setlength\itemsep{-0.3em}
 \item a description of a method for speaker-independent MFCC prediction in Section \ref{section:method}
@@ -89,7 +88,8 @@ The main contributions of this paper are,
 \item an attempt to shed light on what these neural networks might learn in Section \ref{section:visualisation}
 \end{itemize}
 
-The research code is also available as a Github repository online. \cite{Halpern2019}
+\noindent The research code is also available as a Github repository online and also
+along with the media files \cite{Halpern2019}.
 
 \section{Method} \label{section:method}
 \subsection{Dataset preprocessing}
@@ -115,9 +115,10 @@ is beneficial for the case of causal models. In Section \ref{section:nnexperimen
 a bidirectional recurrent model will be introduced which is not causal, meaning there is no need for delays.
 
 \begin{table}[th]
-  \caption{Articulatory information recorded in datasets}
   \label{tab:electrodes}
   \centering
+  \caption{Articulatory information recorded in datasets}
+  \vspace{1em}
   \begin{tabular}{ r r r  }
     \toprule
     \textbf{MNGU0} & \textbf{MOCHA-TIMIT} & \textbf{TORGO} \\ 
@@ -135,20 +136,20 @@ a bidirectional recurrent model will be introduced which is not causal, meaning 
 
 
 \begin{figure}[t]
-  \caption{The visualisation of electrode locations for 300 samples from
-    the MNGU0 dataset at their initial position.}
   \label{fig:electrodes}
   \begin{center}
     \scalebox{0.50}{\input{init_pos.pgf}}
 \end{center}
+  \caption{The visualisation of electrode locations for 300 samples from
+    the MNGU0 dataset at their initial position.}
 \end{figure}
 
 \begin{figure}[t]
-  \caption{Thresholded Prewitt mask of activations indicates that a boundary phenomena is learned by the neural network. Best viewed in zoom.}
   \label{fig:mask}
   \begin{center}
     \scalebox{0.40}{\input{blstm_act.pgf}}
 \end{center}
+  \caption{Thresholded Sobel mask of activations indicates that a boundary phenomena is learned by the neural network. Best viewed in zoom.}
 \end{figure}
 \subsubsection{Speech data processing}
 
@@ -199,7 +200,6 @@ The pitch and band aperiodicities (BAP) are directly fed to the vocoder
 during synthesis time, as these don't contain information about articulation. 
 
 \begin{figure}
-  \caption{Red dashed line indicates training-only setup, and blue dotted lines indicate inference for speech synthesis. Best viewed in colour.}
   \label{fig:structure}
   \begin{tikzpicture}[auto, node distance=3cm,>=latex']
     \node [input, name=speech] {};
@@ -217,11 +217,14 @@ during synthesis time, as these don't contain information about articulation.
     \draw[->,color=blue,densely dotted] (synthesis.0) -- +(3em,0) node[above] {$\text{Speech}$};
     \draw[->] (ema) -- node[above] {$\text{EMA}$} (model);
     \draw[->,color=blue,densely dotted] (analysis.90) -- +(0,2em) node[left] {$F_0$} -| (synthesis.50);
-    \end{tikzpicture}
+  \end{tikzpicture}
+  \vspace{0.5em}
+    \caption{Red dashed line indicates training-only setup, and blue dotted lines indicate inference for speech synthesis. Best viewed in colour.}
 \end{figure}
 
 \begin{table}[th]
   \caption{Comparison of preprocessing techniques}
+  \vspace{0.5em}
   \label{tab:example}
   \centering
   \footnotesize
@@ -242,8 +245,6 @@ during synthesis time, as these don't contain information about articulation.
 \end{table}
 
 \subsection{Neural network design} \label{section:nnexperiment}
-
-\subsubsection{An empirical look at previous architectures}
 
 In this paper, a recurrent neural network will be used in order to
 approximate the articulatory to acoustic mapping. To construct
@@ -275,6 +276,7 @@ The best performing neural network was then trained on the entire dataset.
 \begin{table}[th]
   \caption{Performance of speaker-independent articulatory to acoustic neural network for 10-fold cross-validation with 95 \% confidence intervals. In the TORGO dataset, different recording sessions were
     kept in different datasets. }
+  \vspace{1em}
   \label{tab:all_data}
   \centering
   \footnotesize
@@ -325,6 +327,7 @@ The best performing neural network was then trained on the entire dataset.
   \caption{Comparison of different training methods used in previous publications with the
     results of the pilot study using held-out validation. The method described in the paper of
   Gonzalez performed best.}
+  \vspace{1em}
   \label{tab:architectures}
   \centering
   \footnotesize
@@ -348,9 +351,9 @@ The best performing neural network was then trained on the entire dataset.
     \textbf{MCD***} & 4.84 dB & 7.28 dB & 4.77 dB \\
     \bottomrule
   \end{tabular}
-  * with decay after Epoch 11 \\
-  ** from author communication \\
+  \scriptsize * with decay after Epoch 11 \scriptsize ** from author communication \\
   *** results of our training with Adam optimiser
+  \vspace{-2em}
 \end{table}
 
 For training the mean squared error loss function was used, and for
@@ -365,13 +368,41 @@ Using this framework, the problem of making pathological speech
 can be traded for the problem of making pathological articulation and
 feeding pathological articulation through the neural network.
 
-In order to make the articulation pathological, two methods were employed.
-The first method fixes the position of the tongue tip in the initial position.
-The second method decreases the velocity of the tongue via thresholding discrete time differences,
-and reconstructing the position with performing a cumulative sum.
+Consider the EMA signal \( \mathbf{x} \in \mathbb{R}^{t \times m} \), where \( t \) is
+the number of samples and \( m \)  are the number of electrode channels
+recorded. The problem of articulatory space modification is about finding
+\( f(\mathbf{x}) = \mathbf{\hat{x}} \). The pathological
+framework presented effectively allows the interested people to design
+their own functions.
 
+Two methods are shown in this paper, the author's aim here is to give some ideas
+to the interested reader with these two ideas shown. The first method
+fixes the position of the tongue tip in the initial position.
+This method could be extended for any articulator, defining the pathology
+function as, 
 
+\begin{equation*}
+  \hat{x}_{i,k} = x_{1,k} \quad k \in [1,m].
+\end{equation*}
 
+It is often the case that pathological domain knowledge is known about
+the velocity, or the acceleration of the tongue. In that case, it is
+possible to model it as difference equation. For example, if it is assumed
+that the speed cannot exceed a certain \( c > 0 \),
+
+\begin{equation*}
+  \dot{\hat{{x_{i,m}}}} =
+  \begin{cases}
+    c & \text{ if $x_{i+1,m} - x_{i,m}> c$} \\
+    -c & \text{ if $x_{i+1,m} - x_{i,m} < -c$} \\
+    x_{i+1,m} - x_{i,m} & \text{ otherwise},
+    \end{cases}
+  \end{equation*}
+
+\noindent could be used to model the articulation. Finally, the pathological signal could be obtained using,
+\begin{equation*}
+  {\hat{{x_{i,m}}}} = \sum_{j=1}^{i} x_{j,m}.
+  \end{equation*}
 
 \section{Results and discussion}
 

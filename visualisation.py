@@ -149,20 +149,28 @@ def visualise(args):
 
     for index in range(len(id)):
         plt.subplot(2,len(id),index+1)
+
+        sobel_blstm_sum = np.sum(np.logical_not(sobel_blstm1[index,:400,:]),axis=1)
+        #im = plt.plot(sobel_blstm_sum.T)
         im = plt.imshow(sobel_blstm1[index,:400,:].T,cmap="hot",aspect="auto")
         it1 = plt.title("Layer 1 Example " + str(index+1))
         it1.set_fontsize(14)
+        if (index == 0):
+            it4_ = plt.ylabel("filter activation")
+            it4_.set_fontsize(12)
         plt.subplot(2,len(id),len(id)+index+1)
-        im = plt.imshow(sobel_blstm4[index,:400,:].T,cmap="hot",aspect="auto")
-        it2 = plt.title("Layer 4 Example " + str(index+1))
-        it2.set_fontsize(14)
+        im = plt.plot(sobel_blstm_sum.T)
+        #im = plt.imshow(sobel_blstm4[index,:400,:].T,cmap="hot",aspect="auto")
+        #it2 = plt.title("Layer 4 Example " + str(index+1))
+        #it2.set_fontsize(14)
         if (index == 0):
             it3 = plt.xlabel("time [samples]")
             it3.set_fontsize(12)
-            it4 = plt.ylabel("filter activation")
+            it4 = plt.ylabel("sum of filter activations")
             it4.set_fontsize(12)
-    plt.tight_layout()
+    plt.tight_layout(pad=0,w_pad=0,h_pad=0)
     #plt.show()
+
     
     #for index in range(len(id)):
     #    for i,blstm in enumerate(diff_blstms):
