@@ -19,45 +19,45 @@ Warning--empty journal in pysptk
 Warning--empty year in pysptk
 
 Done.
-You've used 20 entries,
+You've used 22 entries,
             4039 wiz_defined-function locations,
-            931 strings with 11046 characters,
-and the built_in function-call counts, 10398 in all, are:
-= -- 812
-> -- 261
+            940 strings with 11499 characters,
+and the built_in function-call counts, 11480 in all, are:
+= -- 881
+> -- 299
 < -- 44
-+ -- 133
-- -- 53
-* -- 497
-:= -- 1742
-add.period$ -- 39
-call.type$ -- 20
-change.case$ -- 19
++ -- 151
+- -- 62
+* -- 547
+:= -- 1903
+add.period$ -- 43
+call.type$ -- 22
+change.case$ -- 21
 chr.to.int$ -- 102
-cite$ -- 26
-duplicate$ -- 823
-empty$ -- 888
-format.name$ -- 67
-if$ -- 2287
+cite$ -- 28
+duplicate$ -- 913
+empty$ -- 1010
+format.name$ -- 78
+if$ -- 2539
 int.to.chr$ -- 0
-int.to.str$ -- 20
-missing$ -- 149
-newline$ -- 97
-num.names$ -- 19
-pop$ -- 403
+int.to.str$ -- 22
+missing$ -- 170
+newline$ -- 103
+num.names$ -- 21
+pop$ -- 464
 preamble$ -- 1
 purify$ -- 0
 quote$ -- 2
-skip$ -- 795
+skip$ -- 881
 stack$ -- 0
-substring$ -- 257
-swap$ -- 541
+substring$ -- 259
+swap$ -- 591
 text.length$ -- 10
 text.prefix$ -- 0
 top$ -- 5
-type$ -- 20
+type$ -- 22
 warning$ -- 6
-while$ -- 35
-width$ -- 22
-write$ -- 203
+while$ -- 37
+width$ -- 24
+write$ -- 219
 (There were 6 warnings)

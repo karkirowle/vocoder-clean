@@ -29,28 +29,35 @@
 \begin{abstract}
 
   This paper presents a technique to synthetise speech that is pathological on the articulation level.
-  The technique presented considers a vocoder combined with a speaker-independent articulatory to acoustic neural network using electromagnetic articulography recordings using the three largest articulatory datasets. A speech language pathologist indicated that the synthetised samples reflect some qualities of disordered speech. A visualisation technique is also described to shed light on what these neural networks learn.
+  The technique presented considers a vocoder combined with a speaker-independent articulatory to acoustic neural network using electromagnetic articulography recordings from the three largest articulatory datasets. A speech language pathologist indicated that the synthetised samples reflect some qualities of disordered speech. A visualisation technique is also described to shed light on what these neural networks learn. Further directions are pointed out on how to improve speech quality.
 \end{abstract}
 \noindent\textbf{Index Terms}: computational paralinguistics, articulatory-to-acoustic
 speech synthesis, deep learning, pathological speech
 
 \section{Introduction}
+
+At first, the application of pathological speech synthesis might be unclear to the reader.
+However, this area could have many
+potential applications. One of them is the creation of synthetic data which could be
+used as training data for pathological speech detection. It could be also used as a
+clinical tool for counselling patients about post-operative outcomes. Additionally, a
+deeper understanding of the articulatory to speech relationship could offer improvement
+in speech therapy tools.
+
 Understanding how articulation affects speech is a central question in speech
 research. The source-filter model was one of the first models to tackle this
 problem by discovering that speech production could be described by
-the geometry of the vocal tract and the glottal wave. Mathematically,
-the source-filter model synthetises speech by exciting an autoregressive (AR) model with a
-signal, where the AR coefficients capture the geometry of the
-vocal tract, which is also represented by an area function \cite{Benesty2009} \cite{Fant1981}.
+the geometry of the vocal tract and the glottal wave \cite{Benesty2009} \cite{Fant1981}.
+A significant drawback of this method however is that it does not model the movement of articulators.
+
 Recently, deep learning methods became popular
-to understand articulation. These methods use a measurement tool,
+to model articulation. These methods use a measurement tool,
 called electromagnetic articulography (EMA) to obtain articulation data 
 \cite{Aryal2016} \cite{Taguchi} \cite{Liu2018} along with recurrent
-neural networks, which are neural networks that are able to deal with
+neural networks, which are function approximators that are able to deal with
 the sequential nature of data \cite{Hochreiter1997}. Data-driven methods became of interest also
-in real-time speech synthesis. The efficacy of real-time speech synthesis
-has been investigated using a technique called permanent magnetic articulography
-by \cite{Gonzalez2017}, which gave intelligeble
+in real-time speech synthesis, using a technique called permanent magnetic articulography
+by \cite{Gonzalez2017}, resulting in intelligeble
 speech.
 
 The conclusion of these endeavours were that while it is possible to
@@ -65,15 +72,11 @@ meaning the pitch remains natural. Thus, it is proposed that the \( F_0 \) could
 be simply obtained through vocoder analysis and only predict the cepstral
 values through articulation to model pathologies.
 
-Pathological speech synthesis could have many potential applications, for example, improving
-pathological speech detection using synthetic data. It could be also used as a clinical tool,
-in patient counselling to prepare them for post-operative speech quality. A deeper understanding
-of the articulatory to speech relationship could also offer improvements in speech therapy tools.
-
 In this paper, a technique is described which combines healthy speech
 from the three largest articulatory datasets, MNGU0 \cite{Richmond2011},
 MOCHA-TIMIT and TORGO \cite{Rudzicz2012} for the first time, in order to
-create a general speaker-independent articulatory to acoustic model.
+create a general speaker-independent articulatory to acoustic model and
+introduce a novel framework for pathological speech synthesis.
 
 \vspace{0.5em}
 The main contributions of this paper are,
@@ -91,14 +94,13 @@ The research code is also available as a Github repository online. \cite{Halpern
 \section{Method} \label{section:method}
 \subsection{Dataset preprocessing}
 
-Preprocessing technique of previous publications are summarised in Table \ref{tab:example}.
 \subsubsection{Electrode preprocessing}
 
 Articulators recorded are slightly different, meaning particular attention has to be paid to align these datasets. An example of EMA recording locations are shown on Figure \ref{fig:electrodes}. Seven electrodes were used for this experiment out of the total eight, Table \ref{tab:electrodes} includes
 the alignment of the channels that were used. This ensures that each
 input channel records reasonably similar information, meaning that the
 channels should have similar variance. These are then standardised on a per speaker
-basis. These alleviate some
+basis. These steps alleviate some
 of the speaker-wise deviations, but does not alleviate problems if an electrode
 falls off during the experiment or if an electrode needs to be changed.
 
@@ -142,7 +144,7 @@ a bidirectional recurrent model will be introduced which is not causal, meaning 
 \end{figure}
 
 \begin{figure}[t]
-  \caption{Thresholded difference mask of activations indicates that a boundary phenomena is learned by the neural network. Best viewed in zoom.}
+  \caption{Thresholded Prewitt mask of activations indicates that a boundary phenomena is learned by the neural network. Best viewed in zoom.}
   \label{fig:mask}
   \begin{center}
     \scalebox{0.40}{\input{blstm_act.pgf}}
@@ -153,7 +155,7 @@ a bidirectional recurrent model will be introduced which is not causal, meaning 
 
 The total dataset contains speech from six British male and three British
 female speakers, with a total of 6117 utterances, approximately 10 hours of recorded
-speech. The recordings from the microphones all have a sampling frequency of 16kHz.
+speech with a sampling frequency of 16kHz.
 Only the healthy speech has been included from the TORGO dataset. There are 1263 utterances from the
 MNGU0, 920 from the MOCHA-TIMIT and 3934 from the TORGO dataset.
 
@@ -165,6 +167,7 @@ parameters for the training. As the first step of the MFCC extraction \( \alpha
 = 0.42 \) were used as a pre-emphasis coefficient. The PyWORLD vocoder
 also provides the $ F_0 $ and BAP values, which were not used for training.
 
+Preprocessing technique of previous publications are summarised in Table \ref{tab:example}.
 \subsubsection{Sampling}
 
 The sampling frequency of the original EMA signals was 500 Hz, however
@@ -192,11 +195,11 @@ An alternative method with exponential interpolation is described in \cite{Chen1
 
 The setup for inference and training can be seen in Figure \ref{fig:structure}.
 In the training setup, only the MFCCs are given.
-The pitch and band aperiodicities are directly fed to the vocoder
+The pitch and band aperiodicities (BAP) are directly fed to the vocoder
 during synthesis time, as these don't contain information about articulation. 
 
 \begin{figure}
-  \caption{Red dashed line indicates training-only setup, and blue thick lines indicate inference for speech synthesis. Best viewed in colour.}
+  \caption{Red dashed line indicates training-only setup, and blue dotted lines indicate inference for speech synthesis. Best viewed in colour.}
   \label{fig:structure}
   \begin{tikzpicture}[auto, node distance=3cm,>=latex']
     \node [input, name=speech] {};
@@ -207,13 +210,13 @@ during synthesis time, as these don't contain information about articulation.
     \node [input, name=ema, left of=model] {};
     \node [right of=analysis, name=bela] {};
     \draw [->] (speech) -- node {$\text{Speech}$} (analysis);
-    \draw [->,color=blue,thick] (model.350) -- node {$\text{MFCC}$} (synthesis.190);
+    \draw [->,color=blue,densely dotted] (model.350) -- node {$\text{MFCC}$} (synthesis.190);
     \draw[->,color=red,dashed] (analysis.340) -- +(2em, 0) node[above] {$\text{MFCC}$} |- (model.380);
     \draw[->] (analysis.270) -- node {$F_0$} (model.90);
-    \draw[->,color=blue,thick] (analysis.380) -- +(2em,0) node[above] {$\text{BAP}$} -| (synthesis.130);
-    \draw[->,color=blue,thick] (synthesis.0) -- +(3em,0) node[above] {$\text{Speech}$};
+    \draw[->,color=blue,densely dotted] (analysis.380) -- +(2em,0) node[above] {$\text{BAP}$} -| (synthesis.130);
+    \draw[->,color=blue,densely dotted] (synthesis.0) -- +(3em,0) node[above] {$\text{Speech}$};
     \draw[->] (ema) -- node[above] {$\text{EMA}$} (model);
-    \draw[->,color=blue,thick] (analysis.90) -- +(0,2em) node[left] {$F_0$} -| (synthesis.50);
+    \draw[->,color=blue,densely dotted] (analysis.90) -- +(0,2em) node[left] {$F_0$} -| (synthesis.50);
     \end{tikzpicture}
 \end{figure}
 
@@ -235,7 +238,7 @@ during synthesis time, as these don't contain information about articulation.
     \textbf{Vocoder} & STRAIGHT \cite{Kawahara2006} & WORLD  & STRAIGHT \\
     \bottomrule
   \end{tabular}
-  *Upsampled to 200 Hz to match analysis rate
+  *upsampled to 200 Hz to match analysis rate
 \end{table}
 
 \subsection{Neural network design} \label{section:nnexperiment}
@@ -247,33 +250,31 @@ approximate the articulatory to acoustic mapping. To construct
 this speaker-independent network, previous speaker-dependent architectures
 have been studied, to conclude on an appropriate design.
 
-The most pressing problem of recurrent neural networks were the issue
-of vanishing/exploding gradients. This were somewhat alleviated by the
-introduction of Long-Short Term Memory (LSTM) and Gated Recurrent Units (GRU).
+It has been concluded that the optimisation schedules of the publications
+studied were very different, most likely due to the problem of vanishing and
+exploding gradients in recurrent neural networks.
 This is the reason why \cite{Taguchi} used incremental
-training, and probably the reason why \cite{Liu2018} used a learning rate
+training along with gradient clipping, and probably the reason why \cite{Liu2018} used a learning rate
 scheduler. However, \cite{Gonzalez2017} used Adam optimiser \cite{Kingma2015}
 which is known to manage both of these problems with the minor disadvantage of
 the abscence of good convergence guarantees. The fact that Adam was able
 to obtain similar results without careful parameter-tuning indicated that
-it will be an appropriate candidate as an optimiser. 
+it will be an appropriate candidate as an optimiser for our model. 
 
 Previous publications on speaker-dependent models reported best
 performance on bidirectional architectures, however it was unclear whether
 BLSTM or BGRU architectures are better. Also, \cite{Taguchi} resorted to
-a combination of fully connected and recurrent layers. One fully connected layer
-was also included in all architectures, which effectively performs linear
-regression in the end.
+a combination of fully connected and recurrent layers.
 
 In order to determine the best architecture, a pilot study has been
 performed on all three neural networks which are summarised in Table \ref{tab:architectures},
-however all of them were trained with an Adam optimiser, and a learning rate
+however all of them were trained with an Adam optimiser for the reasons above, and a learning rate
 of \( 0.003 \), and a batch size of 100 without noise on MNGU0 dataset.
-The best performing neural network was then trained on the entire dataset. 
-
+The best performing neural network was then trained on the entire dataset.
 
 \begin{table}[th]
-  \caption{Performance of speaker-independent articulatory to acoustic neural network for 10-fold cross-validation with 95 \% confidence intervals.}
+  \caption{Performance of speaker-independent articulatory to acoustic neural network for 10-fold cross-validation with 95 \% confidence intervals. In the TORGO dataset, different recording sessions were
+    kept in different datasets. }
   \label{tab:all_data}
   \centering
   \footnotesize
@@ -286,18 +287,18 @@ The best performing neural network was then trained on the entire dataset.
     \textbf{Combined result} & 5.31 $\pm$ 0.09 dB & N/A \\  
     \midrule
     \textbf{MNGU0} & 5.93 $\pm$ 0.31 dB & 4.77 dB \\
-    \textbf{Female MOCHA-TIMIT} & 5.02 $\pm$ 0.06 dB  & 5.23 dB \\
+    \textbf{Female MOCHA-TIMIT} & \textbf{5.02} $\pm$ 0.06 dB  & 5.23 dB \\
     \textbf{Male MOCHA-TIMIT} & \textbf{4.06} $\pm$ 0.06 dB & 5.83 dB \\
-    \textbf{TORGO Part 1} & 4.48 $\pm$ 0.03 dB & N/A \\
-    \textbf{TORGO Part 2} & 4.23 $\pm$ 0.06 dB & N/A \\
-    \textbf{TORGO Part 3} & 4.81 $\pm$ 0.14 dB & N/A \\
-    \textbf{TORGO Part 4} & 4.94 $\pm$ 0.09 dB & N/A \\
-    \textbf{TORGO Part 5} & 4.64 $\pm$ 0.04 dB & N/A \\
-    \textbf{TORGO Part 6} & 4.70 $\pm$ 0.05 dB & N/A \\
-    \textbf{TORGO Part 7} & 4.62 $\pm$ 0.04 dB & N/A \\
-    \textbf{TORGO Part 8} & 15 $\pm$ 0.86 dB & N/A\\
-    \textbf{TORGO Part 9} & 4.63 $\pm$ 0.11 dB & N/A \\
-    \textbf{TORGO Part 10} & 4.85 $\pm$ 0.12 dB & N/A \\
+    \textbf{TORGO Female 1} & 4.48 $\pm$ 0.03 dB & N/A \\
+    \textbf{TORGO Female 2A} & 4.23 $\pm$ 0.06 dB & N/A \\
+    \textbf{TORGO Female 2B} & 4.81 $\pm$ 0.14 dB & N/A \\
+    \textbf{TORGO Female 3} & 4.94 $\pm$ 0.09 dB & N/A \\
+    \textbf{TORGO Male 1A} & 4.64 $\pm$ 0.04 dB & N/A \\
+    \textbf{TORGO Male 1B} & 4.70 $\pm$ 0.05 dB & N/A \\
+    \textbf{TORGO Male 2A} & 4.62 $\pm$ 0.04 dB & N/A \\
+    \textbf{TORGO Male 2B} & 15 $\pm$ 0.86 dB & N/A\\
+    \textbf{TORGO Male 3} & 4.63 $\pm$ 0.11 dB & N/A \\
+    \textbf{TORGO Male 4} & 4.85 $\pm$ 0.12 dB & N/A \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -336,7 +337,7 @@ The best performing neural network was then trained on the entire dataset.
     \textbf{Dense layers} & 1 & 3+1 & 1 \\
     \textbf{Regularisation} & No & LayerNorm & Noise 0.05 \\
     \textbf{Dropout} & No & Yes (50 \%) & No \\
-    \textbf{Optimiser} & SGD & Grave's RMSProp & Adam \\
+    \textbf{Optimiser} & SGD & RMSProp & Adam \\
     \textbf{Learning rate} & 0.01* & 0.01 & 0.003 \\
     \textbf{Gradient clipping} & No & 5 & No \\
     \textbf{Early stopping} & Yes & Yes & Yes \\
@@ -391,16 +392,35 @@ reported values for speaker-dependent datasets, and in our framework
 the speaker-independent architectures clearly performed better than the
 speaker-dependent architectures on the MOCHA-TIMIT datasets.
 
-\subsection{Learning curves}
+\subsection{What do these neural networks learn?} \label{section:visualisation}
 
-The neural network was retrained using incrementally more training data in twenty
-percent batches. The mean squared error (MSE)
-was calculated at all epochs of training for the validation set, which
+Recently, there have been many advancements in understanding what neural networks learn.
+Convolutional neural networks can be analysed via conventional methods in filter analysis \cite{Palaz2015},
+classification neural networks can propagate back gradients to find the most important inputs for
+the prediction \cite{Selvaraju2017}. These techniques are not applicable for recurrent neural networks in a regression
+context, so we resort to exploring the activations outputs of the layers.
+
+To make these intelligible, a Prewitt mask is thresholded to find peaks in the activations.
+On Figure \ref{fig:mask}, two things can be observed. Firstly, line-like boundaries are learned, and their duration indicates these might approximate phone to word level representations. Secondly, as the activations propagate through the deeper layers of the neural networks, these line like boundaries are better approximated.
+
+\subsection{The current limitations of the synthesis} \label{section:limitations}
+The quality of the synthetised speech depends on the quality of vocoding and
+the quality of prediction.
+
+According to our observations, the quality is bounded more by the
+quality of the vocoder, than the synthesis itself. It has been found that mean squared error (MSE) between the vocoder resynthesised speech and the predicted speech is 11 on the MNGU0 dataset. The MSE between the analysis-resynthesis and the vocoder is 80. That means that 88\% of the performance loss
+is due to the vocoder analysis-resynthesis. This indicates that
+future improvements should focus on better vocoding rather than better
+acoustic mapping.
+
+Despite that, we wanted to investigate the sensitivity of the model performance to more
+training data. The neural network was retrained using incrementally more training data in twenty
+percent batches. The MSE was calculated at all epochs of training for the validation set, which
 can be seen on Figure \ref{learning_curve}.
 
 \begin{figure}[t]
   \begin{center}
-    \scalebox{0.50}{\input{retraining.pgf}}
+    \scalebox{0.50}{\input{retraining_lc.pgf}}
     \caption{Partial data retraining shows that adding more data would
       decrease loss}
       \label{learning_curve}
@@ -410,35 +430,7 @@ can be seen on Figure \ref{learning_curve}.
 
 After that, a paired t-test was performed, and it has been found that there is
 a statistically significant improvement with each addition of the training data,
-meaning more data improves the model.
-
-Again, note that there are several limitations of this assumption. First, the
-relationship is most likely not linear. Secondly, given any noise, achieving
-zero loss is impossible. However, these benchmarks still have merit in
-future experiment design.
-
-\subsection{What do these neural networks learn?} \label{section:visualisation}
-
-
-Recently, there have been many advancements in understanding what neural networks learn.
-Convolutional neural networks can be analysed via conventional methods in filter analysis,
-classification neural networks can propagate back gradients to find the most important inputs for
-the prediction. These techniques are not applicable for recurrent neural networks in a regression
-context, so we resort to exploring the activations outputs of the layers.
-
-To make these intelligible, a difference mask is thresholded to find oriented peaks in the spectra.
-On Figure \ref{fig:mask}, two things can be observed. Firstly, line-like boundaries are learned, and their duration indicates these might approximate phone to word level representations. Secondly, as the activations propagate through the deeper layers of the neural networks, these line like boundaries are better approximated.
-
-\subsection{The current limitations of the synthesis} \label{section:limitations}
-According to our observations, the quality is bounded more by the
-quality of the vocoder, than the synthesis itself. In terms of mean square
-error (MSE), it has been found that difference between the vocoder resynthesised speech
-and the predicted speech has an MSE of 11. The MSE
-between analysis-resynthesis and the vocoder is 80. That means that 88\% of the performance loss
-is due to the vocoder analysis-resynthesis. This indicates that
-future improvements should focus on better vocoding rather than better
-acoustic mapping.
-
+meaning more data would significantly help generalisation performance.
 
 \subsection{Pathological speech examples}
 
@@ -454,7 +446,7 @@ pathological articulation by reflecting the physiological changes in the articul
 space. This is most easily done in a data-driven fashion, by recording healthy
 and pathological articulation and creating a pathology-dependent mapping
 in the articulatory space. Because it is a low dimensional space, this
-is a much easier problem than learning the same mapping in the cepstral
+is a much easier problem than learning the same mapping in the high dimensional cepstral space.
 
 \section{Conclusion}
 

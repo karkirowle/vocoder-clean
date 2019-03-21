@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2018.10.14)  15 MAR 2019 09:29
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2018.10.14)  15 MAR 2019 12:44
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -775,22 +775,22 @@ File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
 )
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <9> not available
 (Font)              Font shape `OT1/ptm/b/n' tried instead on input line 29.
-LaTeX Font Info:    Try loading font information for TS1+ptm on input line 82.
+LaTeX Font Info:    Try loading font information for TS1+ptm on input line 85.
 
 (/usr/share/texlive/texmf-dist/tex/latex/psnfss/ts1ptm.fd
 File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
 )
-Underfull \hbox (badness 1983) in paragraph at lines 82--83
+Underfull \hbox (badness 1983) in paragraph at lines 85--86
 []\OT1/ptm/m/n/9 a de-scrip-tion of a method for speaker-independent
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 83--85
+Underfull \hbox (badness 10000) in paragraph at lines 86--88
 []\OT1/ptm/m/n/9 a tech-nique to in-cor-po-rate ar-tic-u-la-tion domain-
  []
 
 
-Overfull \hbox (10.93996pt too wide) in paragraph at lines 119--132
+Overfull \hbox (10.93996pt too wide) in paragraph at lines 121--134
  [][] 
  []
 
@@ -821,13 +821,18 @@ Missing character: There is no â in font phvr7t!
 Missing character: There is no ˆ in font phvr7t!
 Missing character: There is no ’ in font phvr7t!
 )
-Overfull \hbox (3.64174pt too wide) in paragraph at lines 140--141
+Overfull \hbox (3.64174pt too wide) in paragraph at lines 142--143
  [] 
  []
 
 (./blstm_act.pgf)
-Overfull \hbox (9.41985pt too wide) in paragraph at lines 148--149
+Overfull \hbox (9.41985pt too wide) in paragraph at lines 150--151
  [] 
+ []
+
+
+Underfull \hbox (badness 1755) in paragraph at lines 162--169
+[]\OT1/ptm/m/n/9 Vocoder fea-tures were ex-tracted with the Py-WORLD
  []
 
 [1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}
@@ -835,28 +840,15 @@ Overfull \hbox (9.41985pt too wide) in paragraph at lines 148--149
 
 
 ]
-Underfull \hbox (badness 1755) in paragraph at lines 160--167
-[]\OT1/ptm/m/n/9 Vocoder fea-tures were ex-tracted with the Py-WORLD
- []
-
-
-Overfull \hbox (13.49004pt too wide) in paragraph at lines 217--218
+Overfull \hbox (13.49004pt too wide) in paragraph at lines 220--221
 [][] 
  []
 
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <8> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 227.
-
-Underfull \vbox (badness 2277) has occurred while \output is active []
-
- [2 <./init_pos-img0.png> <./blstm_act-img0.png> <./blstm_act-img1.png> <./blst
-m_act-img2.png> <./blstm_act-img3.png>]
-Overfull \hbox (17.40076pt too wide) in paragraph at lines 331--350
- [][] 
- []
-
-[3] (./retraining.pgf)
-Overfull \hbox (3.64174pt too wide) in paragraph at lines 403--405
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 230.
+[2 <./init_pos-img0.png> <./blstm_act-img0.png> <./blstm_act-img1.png> <./blstm
+_act-img2.png> <./blstm_act-img3.png>] [3] (./retraining_lc.pgf)
+Overfull \hbox (3.64174pt too wide) in paragraph at lines 423--425
  [] 
  []
 
@@ -866,13 +858,13 @@ Missing character: There is no ¶ in font ptmr7t!
 
 ] (./template.aux) ) 
 Here is how much of TeX's memory you used:
- 17069 strings out of 492982
- 352704 string characters out of 6134895
- 809641 words of memory out of 5000000
- 20229 multiletter control sequences out of 15000+600000
- 40881 words of font info for 90 fonts, out of 8000000 for 9000
+ 17064 strings out of 492982
+ 352679 string characters out of 6134895
+ 809504 words of memory out of 5000000
+ 20225 multiletter control sequences out of 15000+600000
+ 39121 words of font info for 88 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 55i,9n,78p,447b,875s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 55i,9n,78p,515b,875s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc}
 </usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></usr/s
 hare/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/share/tex
@@ -883,7 +875,7 @@ ype1/urw/courier/ucrr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/helv
 etic/uhvr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb
 ></usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/share/te
 xlive/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on template.pdf (5 pages, 193991 bytes).
+Output written on template.pdf (5 pages, 196933 bytes).
 PDF statistics:
  99 PDF objects out of 1000 (max. 8388607)
  55 compressed objects within 1 object stream

@@ -130,6 +130,18 @@ R.~F. Kubichek, ``{Mel-cepstral Distance Measure for Objective Speech Quality
 R.~Jozefowicz, W.~Zaremba, and I.~Sutskever, ``{An Empirical Exploration of
   Recurrent Network Architectures},'' \emph{JMLR}, 2015.
 
+\bibitem{Palaz2015}
+D.~Palaz, M.~Magimai-Doss, and R.~Collobert, ``{Analysis of CNN-based speech
+  recognition system using raw speech as input},'' in \emph{Proceedings of the
+  Annual Conference of the International Speech Communication Association,
+  INTERSPEECH}, 2015.
+
+\bibitem{Selvaraju2017}
+R.~R. Selvaraju, M.~Cogswell, A.~Das, R.~Vedantam, D.~Parikh, and D.~Batra,
+  ``{Grad-CAM: Visual Explanations from Deep Networks via Gradient-Based
+  Localization},'' in \emph{Proceedings of the IEEE International Conference on
+  Computer Vision}, 2017.
+
 \bibitem{Speech2019}
 \BIBentryALTinterwordspacing
 B.~Halpern, ``{Speech Examples}.'' [Online]. Available:
