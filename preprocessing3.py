@@ -469,8 +469,9 @@ def mlpg_postprocessing(mfcc, bins_1, scaler_sp):
         mlpg_generated[i,:,:] = mlpg(mfcc[i,:,:],
                                      np.ones((T,bins_1 * 2)),
                                      windows)
-    for i in range(len(scaler_sp)):
-        mlpg_generated[:,:,i] = scaler_sp[i].inverse_transform(mlpg_generated[:,:,i])
+    if scaler_sp is not None:
+        for i in range(len(scaler_sp)):
+            mlpg_generated[:,:,i] = scaler_sp[i].inverse_transform(mlpg_generated[:,:,i])
     
     return mlpg_generated
 
@@ -713,22 +714,24 @@ def preprocess_save_combined(alpha=0.42,
         fname_wo_extension = fname[:-3 or None]
         wav_path = fname_wo_extension + "wav"
         sound_data, fs = sf.read(wav_path)
+        sd.play(sound_data,fs)
+        sd.wait()
         if (len(sound_data.shape) == 2):
             sound_data = sound_data[:,1].copy(order='C')
 
         f0, sp, ap = pw.wav2world(sound_data, fs, 5) # 2
 
-        
         # The general way is to either truncate or zero-pad
         T = f0.shape[0]
         read_in_length = np.minimum(T,max_length)
         dataset[k,:read_in_length,channel_number] = f0_process(f0[:read_in_length])
         dataset[k,:,channel_number] = f0_process(dataset[k,:,channel_number])
         sp_delta = sp_delta_generation(sp,bins_1,alpha,200)
-
+        
         ap = pw.code_aperiodicity(ap, fs)
 
         puref0set[k,:read_in_length] = f0[:read_in_length]
+        # TODO: DO NOT FORGET CHANGE BACK
         spset[k,:read_in_length,:] = sp_delta[:read_in_length,:]
 
         # Also doing the repetition for the spectra
@@ -737,11 +740,13 @@ def preprocess_save_combined(alpha=0.42,
 
         apset[k,:read_in_length,:] = ap[:read_in_length,:]
 
-        sound1 = audio.debug_resynth(puref0set[k,:read_in_length],
-                                     spset[k,:read_in_length],
-                                     apset[k,:read_in_length],
-                                     fs=16000,
-                                     an=5)
+        #mlpg = mlpg_postprocessing(spset[None,k,:read_in_length],bins_1,None)
+        #sound1 = audio.debug_resynth(puref0set[k,:read_in_length],
+        #                             sajt[0,:,:],
+        #                             #spset[k,:read_in_length,:],
+        #                             apset[k,:read_in_length],
+        #                             fs=16000,
+        #                             an=5)
         sound_data = sound_data[:sound1.shape[0]]
         sound1 = sound1[:sound_data.shape[0]]
 

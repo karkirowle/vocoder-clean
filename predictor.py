@@ -102,6 +102,8 @@ def synthesis(args):
                                               options["bins_1"],
                                               scaler_sp)
 
+    print(mlpg_vocoder.shape)
+
     # ---------------------- SPEECH SYNTHESIS ----------------------------
 
     import sounddevice as sd
@@ -129,13 +131,13 @@ def synthesis(args):
                                         an=5)
 
 
-            #fname = "sounds5/pathological/" + str(i) + ".wav"
+            fname = "sounds5/pathological/" + str(id) + ".wav"
 
-           # sound2 = audio.save_resynth(fname,f0[id,:resynth_length],
-           #                     mlpg_p_generated[id,:resynth_length,:],
-           #                     bap_gt_u[id,:resynth_length,:],
-           #                     fs=16000,
-            #                    an=5)
+            sound2 = audio.save_resynth(fname,f0[id,:resynth_length],
+                                mlpg_p_generated[id,:resynth_length,:],
+                                bap_gt_u[id,:resynth_length,:],
+                                fs=16000,
+                                an=5)
 
             fname = "sounds5/vocoder/" + str(id) + ".wav"
 
