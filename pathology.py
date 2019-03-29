@@ -3,59 +3,46 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import scipy.signal as signal
 
-def derivative_clip(signal,t=0.1,plot_figure=True):
+
+def derivative_clip_full(signal,t,channel_idx):
     """
     Performs the derivatve clipping signal processing algorithm
 
     Parameters:
     -----------
-    signal: 1D numpy array with T samples
-    t: derivative threshold
-    plot_figure: whether to show plot objects
+    signal: full 3D array
+    channel_idx: channel ids to select
+
 
     Returns:
     --------
-    ema_4: clipped derivative signal
+    new 3D array
     """
 
-    t = 0.1
-
     ema_signal = np.copy(signal)
-    ema_4_diff = np.diff(ema_signal)
-    ema_4_diff[ema_4_diff > t] = t
-    ema_4_diff[ema_4_diff < -t] = -t
-    ema_4 = np.cumsum(np.insert(ema_4_diff,0,signal[0]))
 
-    if plot_figure:
-        sns.set_style("darkgrid")
-        plt.subplot(1,2,1)
-        plt.plot(signal)
-        plt.title("Original EMA signal for tongue tip")
-        plt.ylim([-2, 3.5])
-        plt.xlabel("time [s]")
-        plt.ylabel("normalised x position")
+    plt.subplot(1,2,1)
+    plt.plot(ema_signal[10,:,channel_idx].T)
+    
+    # Time derivative
+    ema_diff = np.diff(ema_signal[:,:,channel_idx],axis=1)
+    ema_initial = ema_signal[:,[[0]],channel_idx]
 
-        plt.subplot(1,2,2)
-        plt.plot(ema_4)
-        plt.title("Modified EMA signal for tongue tip")
-        plt.ylim([-2, 3.5])
-        plt.xlabel("time [s]")
-        plt.ylabel("normalised x position")
-        plt.show()
+    ema_diff[ema_diff > t] = t
+    ema_diff[ema_diff < -t] = -t
 
-    return ema_4
+    ema_diff = np.concatenate((ema_initial, ema_diff), axis=1)
+    ema_path_dims = np.cumsum(ema_diff, axis=1)
+
+    ema_path = np.copy(ema_signal)
+    ema_path[:,:,channel_idx] = ema_path_dims
+
+    plt.subplot(1,2,2)
+    plt.plot(ema_path[10,:,channel_idx].T)
+    plt.show()
+    return ema_path
 
 
-def derivative_clip_2(dataset,t, channel_idx):
-
-    path_test = dataset 
-    path_test_diff = np.diff(dataset[:,:,channel_idx],axis=1)
-    print(path_test_diff.shape)
-    path_test_diff[:, path_test_diff > t, :] = t * np.ones_like(path_test_diff[:,path_test_diff > t, :])
-    path_test_diff[:, path_test_diff < -t, :] = -t * np.ones_like(path_test_diff[:,path_test_diff < -t, :])
-    path_test[:, :, channel_idx] = np.cumsum(np.insert(path_test_diff,0,path_test[:,0,:]))
-
-    return path_test
 def upsampling(dataset, total = 6500, channels=[4,9]):
     """
     Does the upsampling on the entire dataset

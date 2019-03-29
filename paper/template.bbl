@@ -29,8 +29,11 @@ J.~Benesty, M.~M. Sondhi, Y.~Huang, and S.~Greenberg, \emph{{Springer Handbook
 \BIBentrySTDinterwordspacing
 
 \bibitem{Fant1981}
+\BIBentryALTinterwordspacing
 G.~Fant, ``{The source filter concept in voice production},'' \emph{Quarterly
-  Progress and Status Report}, 1981.
+  Progress and Status Report}, 1981. [Online]. Available:
+  \url{http://www.speech.kth.se/gpsr}
+\BIBentrySTDinterwordspacing
 
 \bibitem{Aryal2016}
 \BIBentryALTinterwordspacing
@@ -72,6 +75,12 @@ K.~Richmond, P.~Hoole, and S.~King, ``{Announcing the electromagnetic
   articulography (day 1) subset of the mngu0 articulatory corpus},'' in
   \emph{Proceedings of the Annual Conference of the International Speech
   Communication Association, INTERSPEECH}, 2011.
+
+\bibitem{Wrench1999}
+\BIBentryALTinterwordspacing
+A.~Wrench, ``{The MOCHA-TIMIT articulatory database.}'' 1999. [Online].
+  Available: \url{http://www.speech.kth.se/gpsr}
+\BIBentrySTDinterwordspacing
 
 \bibitem{Rudzicz2012}
 F.~Rudzicz, A.~K. Namasivayam, and T.~Wolff, ``{The TORGO database of acoustic

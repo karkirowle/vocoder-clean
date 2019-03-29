@@ -44,14 +44,15 @@ def synthesis(args):
     val_gen = None
     # -------------- PATHOLOGICAL SIGNAL PROCESSING ----------------------
 
+    print(X.shape)
     # Method 1: Clip derivative
-    #ema_4 =  pathology.derivative_clip(X[4,:,4])
-
+    path_test =  pathology.derivative_clip_full(X,0.01,[4,9])
+    
     # Method 2: Upsample the signal
     #path_test = pathology.upsampling(X,total=6500, channels=[4,9])
 
     # Delay
-    path_test = pathology.delay_signal(X,50,channel_idx=[4,9])
+    #path_test = pathology.delay_signal(X,50,channel_idx=[4,9])
 
     #path_test = pathology.scale_channel(X,10/8,[2,3,4,5])
 
@@ -122,7 +123,7 @@ def synthesis(args):
         resynth_length = len(np.trim_zeros(f0[id,:],'b'))
 
         if resynth_length > 0:
-            fname = "sounds5/normal/" + str(id) + ".wav"
+            fname = "sounds6/normal/" + str(id) + ".wav"
             print(fname)
             sound1 = audio.save_resynth(fname,f0[id,:resynth_length],
                                 mlpg_generated[id,:resynth_length,:],
@@ -131,7 +132,7 @@ def synthesis(args):
                                         an=5)
 
 
-            fname = "sounds5/pathological/" + str(id) + ".wav"
+            fname = "sounds6/pathological/" + str(id) + ".wav"
 
             sound2 = audio.save_resynth(fname,f0[id,:resynth_length],
                                 mlpg_p_generated[id,:resynth_length,:],
@@ -139,7 +140,7 @@ def synthesis(args):
                                 fs=16000,
                                 an=5)
 
-            fname = "sounds5/vocoder/" + str(id) + ".wav"
+            fname = "sounds6/vocoder/" + str(id) + ".wav"
 
             sound3 = audio.save_resynth(fname,f0[id,:resynth_length],
                                         mlpg_vocoder[id,:resynth_length],
